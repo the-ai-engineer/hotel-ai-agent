@@ -1,5 +1,10 @@
 # Development setup and build walkthrough
 
+> Design update: [docs/architecture.md](../docs/architecture.md) is the current proposed
+> architecture. V1 now focuses on policy answers and read-only villa availability
+> over SSE. Calendar and host-request sections below are earlier draft material
+> to revise when implementing the tutorial.
+
 This guide starts with the preserved website and prepares a coding assistant to
 build the hotel agent. The backend and deployment are still planned. The CLI
 commands below do not turn the saved website into a working AI application by

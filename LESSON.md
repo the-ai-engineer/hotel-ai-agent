@@ -1,5 +1,10 @@
 # Build and Deploy an AI Hotel Support Agent on Google Cloud
 
+> Design update: [docs/architecture.md](./docs/architecture.md) is the current proposed
+> architecture. V1 now focuses on policy answers and read-only villa availability
+> over SSE. Calendar and host-request sections below are earlier draft material
+> to revise when implementing the tutorial.
+
 Working draft: scripted opening and a 30-minute video outline. The application
 backend and cloud demonstrations described below are planned. The saved website
 prototype is runnable, with simulated concierge responses.

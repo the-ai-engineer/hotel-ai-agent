@@ -26,6 +26,8 @@ node --check code/website/app.js
 
 ## Start Here
 
+- [Proposed production architecture](./docs/architecture.md)
+
 - [Scripted opening, architecture, and 30-minute outline](./LESSON.md)
 - [Saved hotel website and preview instructions](./code/README.md)
 - [Step-by-step CLI setup and build guide](./resources/setup-guide.md)
