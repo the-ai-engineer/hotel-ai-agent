@@ -1,10 +1,5 @@
 # Development setup and build walkthrough
 
-> Design update: [docs/architecture.md](../docs/architecture.md) is the current proposed
-> architecture. V1 now focuses on policy answers and read-only villa availability
-> over SSE. Calendar and host-request sections below are earlier draft material
-> to revise when implementing the tutorial.
-
 This guide starts with the preserved website and prepares a coding assistant to
 build the hotel agent. The backend and deployment are still planned. The CLI
 commands below do not turn the saved website into a working AI application by
@@ -84,6 +79,27 @@ gcloud config set project "$GOOGLE_CLOUD_PROJECT"
 gcloud config get-value project
 ```
 
+To create a new project instead of selecting an existing one, first choose a
+globally unique project ID and a billing account you are authorized to use. Run
+these commands deliberately; linking billing enables paid usage. Organization
+policies may require `--folder` or `--organization` when creating the project.
+
+```bash
+gcloud projects create "$GOOGLE_CLOUD_PROJECT" --name="Sanctuary Hotel Agent"
+gcloud billing accounts list
+export HOTEL_BILLING_ACCOUNT="your-authorized-billing-account-id"
+gcloud billing projects link "$GOOGLE_CLOUD_PROJECT" --billing-account="$HOTEL_BILLING_ACCOUNT"
+gcloud config set project "$GOOGLE_CLOUD_PROJECT"
+gcloud projects describe "$GOOGLE_CLOUD_PROJECT"
+gcloud billing projects describe "$GOOGLE_CLOUD_PROJECT"
+```
+
+Create a billing budget and notification recipient in the console before model
+experiments. The alert does not enforce a spending cap. These commands are
+recording instructions, not actions performed by this documentation update.
+References: [create project](https://docs.cloud.google.com/sdk/gcloud/reference/projects/create)
+and [link billing](https://docs.cloud.google.com/sdk/gcloud/reference/billing/projects/link).
+
 In `gcloud init`, sign in and choose the dedicated project. Confirm the final
 printed project ID before changing cloud resources. A separate gcloud
 configuration helps isolate CLI settings; it does not create a project or a
@@ -114,9 +130,7 @@ gcloud services enable aiplatform.googleapis.com --project "$GOOGLE_CLOUD_PROJEC
 ```
 
 Use the narrow model-access permissions required by your project, not Owner as a
-shortcut. Calendar access is a separate integration: later share only the demo
-calendar with the application identity and use read-only Calendar scope. Cloud
-ADC alone does not grant access to a private calendar.
+shortcut. Our hotel tools read PostgreSQL; no Calendar integration is required for V1.
 
 Sources: [ADC login](https://docs.cloud.google.com/sdk/gcloud/reference/auth/application-default/login)
 and [Agents CLI authentication](https://google.github.io/agents-cli/guide/authentication/).
@@ -176,29 +190,25 @@ Source: [CLI reference](https://google.github.io/agents-cli/cli/).
 
 ## 8. Build the hotel workflow through the coding assistant
 
-Return to the tutorial folder. Give the assistant the
-[implementation prompt](./prompts.md), the existing `code/website/` files, and
-[lesson architecture](../LESSON.md#proposed-architecture). Build in this order:
+Return to the repository. Use the [implementation prompt](./prompts.md) and
+[architecture](../docs/architecture.md). The ordered working results are:
 
-1. Add the Python API and ADK agent. Prove one guide answer with a source link.
-2. Add local PostgreSQL guide content and persistent, server-owned sessions.
-3. Add calendar lookup against fictional events in one demo calendar. Test empty
-   results, time zones, and timeouts separately.
-4. Add confirmed host requests with an idempotency key and a staff-only list.
-5. Replace the widget's scripted responses with streaming API output. Keep the
-   visual design, but remove fixture-only room/date assumptions.
-6. Run deterministic tool tests and the lesson's evaluation cases. Compare manual
-   verdicts with a judge and report model usage separately from infrastructure.
-7. After settling Cloud Run versus managed Agent Runtime, generate and review
-   deployment configuration. Configure Cloud SQL, service identity, secrets,
-   limits, and tracing before running the deployment command.
-8. Repeat the guest journey on the cloud URL, inject a calendar failure, inspect
-   its trace, and verify the handoff persists after an application restart.
+1. Preserve the site under `frontend/` and serve it from the Python backend.
+2. Add local PostgreSQL migrations, fictional policies and a published policy page.
+3. Prove one ADK/Gemini answer from the policy tool with a working source link.
+4. Add deterministic villa availability against seeded inventory and occupancy.
+5. Connect SSE, sessions and persistent turns to the widget; render validated cards.
+6. Verify retries, disconnects, isolation, missing evidence and fixed evaluations.
+7. Build the container; add reviewed Cloud Run/Cloud SQL deployment configuration,
+   runtime identity, Secret Manager, migrations, limits and observability exports.
+8. Run cloud smoke tests and a controlled availability lookup failure; verify an
+   alert reaches the chosen notification channel and remove the demo fault.
 
-Each step should produce a working slice before continuing. Record the exact
-commands, output, chosen model, and observed failures as implementation proceeds.
-Do not present this sequence as an already completed cloud deployment. A custom
-FastAPI website and persistent data need integration beyond the default scaffold.
+Exact application commands will be documented and verified as each component is
+implemented. The backend does not exist yet; CLI scaffolding alone does not create
+this hotel integration. Use Gemini for the primary recording path and verify its
+model ID and region access before cloud calls. Keep deployment and model costs
+within the agreed project budget.
 
 ## Troubleshooting and cleanup
 
@@ -207,7 +217,7 @@ FastAPI website and persistent data need integration beyond the default scaffold
 | `agents-cli` not found | uv tool PATH and a fresh terminal; compare package name with command name. |
 | Missing ADC | Complete application-default login; CLI login alone is not enough. |
 | 403 from model | Selected project, model API, billing, IAM, model access and region. |
-| Calendar lookup denied | Calendar API, read-only scope, and access to that specific calendar. |
+| Availability is empty | Seed horizon, guest capacity, open inventory days and overlapping bookings. |
 | Playground works but website is static | Expected until step 8 connects the widget to the backend. |
 | Conversation disappears on restart | In-memory starter sessions must be replaced before deployment. |
 

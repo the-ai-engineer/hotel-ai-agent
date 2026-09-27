@@ -26,6 +26,7 @@ node --check code/website/app.js
 
 ## Start Here
 
+- [Architecture diagram (PNG)](./docs/diagrams/architecture.png)
 - [Proposed production architecture](./docs/architecture.md)
 
 - [Scripted opening, architecture, and 30-minute outline](./LESSON.md)

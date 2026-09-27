@@ -1,27 +1,22 @@
-# First Implementation Prompt
-
-Use this after choosing the deployment target described in the lesson.
+# First implementation prompt
 
 ```text
-Read LESSON.md and the repository instructions. Build the first local slice of
-Sanctuary Hotel, a fictional hotel's support assistant, using Python and Google ADK.
-Use Agents CLI through the coding assistant where supported by the installed
-version. Explain the generated code and check the commands before using them.
+Read docs/architecture.md and repository instructions. The design uses one Cloud
+Run service with static frontend and a FastAPI/Google ADK backend, Gemini through
+Vertex AI, SSE and PostgreSQL. Implement only the first working local slice.
 
-Start with the guest-guide lookup and one end-to-end chat turn. Store guide
-sections and server-owned conversation state in PostgreSQL. Return source links
-with answers and a clear fallback when no supporting information is found.
-Use parameterized queries, bounded tool results, and server-only model access.
+Preserve the existing Sanctuary Hotel assets and behavior while moving the website
+to frontend/. Add backend/ with a reproducible Python environment and a server
+that serves those assets. Add local PostgreSQL, migrations and fictional published
+hotel policy sections. Implement search_policies and versioned public policy pages.
+Prove one ADK/Gemini question returns the correct fact and a working source link.
 
-Use fictional data. Do not connect real guest records, deploy cloud resources,
-or add booking or payment functionality in this local slice. Never put credentials
-in browser code or source control.
+Use Agents CLI skills where supported, inspect generated code and pin dependencies.
+Use parameterized lookups and server-side credentials. Do not introduce booking
+writes, Calendar integration, WhatsApp, a queue or cloud provisioning in this task.
 
-Before coding, define acceptance criteria and verification commands. Provide
-credential-free tests with model/tool fixtures, plus a separately documented
-integration check for the real model. Test missing evidence, session isolation,
-and a failed model request. Clearly distinguish fixtures from live responses.
-
-Keep runnable files under code/. Document install, run, test, and reset commands
-there. Update the repository verification manifest and run the required checks.
+Define acceptance checks first. Supply credential-free tests plus a documented
+live-model check. Document exact install, run, test and reset commands that you
+have actually verified. Keep simulation distinct from live model output. Follow
+the architecture's session, failure and source-access rules as the API develops.
 ```
