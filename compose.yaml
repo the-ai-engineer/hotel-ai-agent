@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: hotel
+      POSTGRES_PASSWORD: hotel
+      POSTGRES_DB: hotel
+    ports:
+      - "127.0.0.1:55439:5432"
+    volumes:
+      - hotel-postgres:/var/lib/postgresql
+      - ./backend/seeds/init-test.sql:/docker-entrypoint-initdb.d/001-test.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hotel -d hotel"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+volumes:
+  hotel-postgres:

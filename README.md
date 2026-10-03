@@ -3,26 +3,54 @@
 A planned tutorial about adding an AI support widget to a fictional hotel website,
 then deploying, testing, and operating it on Google Cloud.
 
-**Status:** runnable website prototype and draft lesson. Concierge replies and
-requests are simulated. No working agent or cloud deployment is included yet.
+**Status:** policy chat is implemented with Google ADK, Gemini on Vertex AI,
+PostgreSQL and a fetch/SSE widget. Availability, deployment and capacity testing
+are tracked in the [implementation issues](https://github.com/owainlewis/hotel-ai-agent/issues).
+Cloud model access and production capacity are not yet verified.
 
-## Run the website
+## Run locally
+
+Install Docker, uv, Python 3.12 and Node 22. Copy `.env.example` to `.env`, then:
 
 ```bash
-git clone git@github.com:owainlewis/hotel-ai-agent.git
-cd hotel-ai-agent
-python3 -m http.server 8773 --bind 127.0.0.1 --directory code/website
+docker compose -p hotel-ai-agent up -d postgres
+uv sync --project backend --locked --python 3.12
+(cd backend && uv run alembic upgrade head)
+uv run --project backend --directory backend python -m app.cli seed
+bash scripts/dev.sh
 ```
 
-Open http://127.0.0.1:8773/. The fictional property is Sanctuary Hotel,
-Luxury Forest Retreat.
+Open http://127.0.0.1:8773/. The seed is explicit fictional hotel data and refuses
+production mode. The local database uses port 55439 to avoid other projects.
+
+For real answers, set `GOOGLE_CLOUD_PROJECT` in `.env`, select an accessible
+Gemini model, and use `gcloud auth application-default login`. Credentials stay
+on the server. Without model access the widget reports an error and preserves
+history; it never substitutes scripted answers.
+
+The example selects `gemini-3.5-flash` on the global endpoint. Confirm access for
+your project and recheck [Google's model lifecycle](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-versions) before recording or deploying.
 
 ## Check
 
 ```bash
-python3 code/verify_website.py
-node --check code/website/app.js
+bash scripts/check.sh
+python3 scripts/verify_website.py
 ```
+
+The compose initialization creates a separate `hotel_test` database. Tests refuse
+remote URLs and never use the application `.env` database. If reusing a volume
+created before this setup, create `hotel_test` explicitly with local psql.
+
+Tests use a deterministic model inside the actual ADK tool loop and real local
+PostgreSQL. They prove app behavior, not Vertex AI access or cloud capacity.
+
+## Layout
+
+- `frontend/`: saved hotel website, images, video and chat modules.
+- `backend/app/`: FastAPI routes, agent adapter, read-only tools and persistence.
+- `backend/migrations/`, `backend/seeds/`, `backend/tests/`: schema, fictional data and checks.
+- `docs/hotel-agent/`: design and review; `resources/`: viewer guides.
 
 ## Start Here
 

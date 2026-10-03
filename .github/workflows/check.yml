@@ -1,0 +1,29 @@
+name: Check
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql+asyncpg://hotel:hotel@127.0.0.1:55439/hotel_test
+      TEST_DATABASE_URL: postgresql+asyncpg://hotel:hotel@127.0.0.1:55439/hotel_test
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: hotel
+          POSTGRES_PASSWORD: hotel
+          POSTGRES_DB: hotel_test
+        ports: ['55439:5432']
+        options: >-
+          --health-cmd "pg_isready -U hotel -d hotel_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: uv sync --project backend --locked --python 3.12
+      - run: cd backend && uv run alembic upgrade head
+      - run: bash scripts/check.sh
+      - run: python3 scripts/verify_website.py
