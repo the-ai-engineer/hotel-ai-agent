@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from ..hotel import policy_page
+from ..hotel import get_villa, policy_page
 
 router = APIRouter()
 templates = Environment(
@@ -23,3 +23,11 @@ async def policy(slug: str, request: Request, version: int | None = Query(defaul
         superseded=rows[0]["superseded"],
         passages=[r["body"] for r in rows],
     )
+
+
+@router.get("/villas/{slug}", response_class=HTMLResponse)
+async def villa(slug: str, request: Request):
+    value = await get_villa(request.app.state.db, slug)
+    if value is None:
+        raise HTTPException(404, "not_found")
+    return templates.get_template("villa.html").render(villa=value)

@@ -4,7 +4,7 @@ from uuid import uuid4
 from fastapi import HTTPException
 from sqlalchemy import text
 
-from .schemas import Answer
+from .schemas import Answer, context_answer
 
 
 async def owned(connection, conversation_id, owner, lock=False):
@@ -143,7 +143,7 @@ def context(rows):
     for row in reversed(rows):
         if row["state"] != "completed":
             continue
-        length = len(row["message"]) + len(row["result"]["answer"])
+        length = len(row["message"]) + len(context_answer(row["result"]))
         if size + length > 16000 or len(selected) == 20:
             break
         selected.append(row)

@@ -1,0 +1,5 @@
+[
+ {"slug":"forest-suite","name":"Forest Suite","description":"One bedroom with a private pool and covered forest terrace.","capacity":2,"amenities":["Private pool","Covered terrace","King bed"],"image":"/assets/suite.png"},
+ {"slug":"garden-villa","name":"Garden Villa","description":"Two bedrooms, a shaded terrace and a private garden pool.","capacity":4,"amenities":["Private pool","Two bedrooms","Garden terrace"],"image":"/assets/bedroom-daylight.png"},
+ {"slug":"canopy-villa","name":"Canopy Villa","description":"Three bedrooms overlooking the forest with a large pool terrace.","capacity":6,"amenities":["Private pool","Three bedrooms","Forest views"],"image":"/assets/forest-pool.png"}
+]

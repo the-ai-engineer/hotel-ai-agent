@@ -213,4 +213,4 @@ $("#reset").onclick = async () => {
 };
 $("#question").maxLength = 2000;
 $("#chatWelcome").textContent =
-  "Ask about arrival, breakfast or hotel policies.";
+  "Ask about arrival, breakfast or available villas for your dates.";
