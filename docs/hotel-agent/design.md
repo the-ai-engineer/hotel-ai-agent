@@ -282,7 +282,7 @@ Request-local tool wrappers capture successful evidence. Cards are built from th
 `config.py` validates `APP_ENV` (local/demo/production), `PUBLIC_ORIGINS`,
 `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `GEMINI_MODEL`,
 `DATABASE_URL`, `HOTEL_TIMEZONE`, `HOTEL_CONTACT_URL` and `IP_HASH_SECRET` and `PROPERTY_TURNS_PER_MINUTE`. `DEMO_IP_LIMIT_OVERRIDE` overrides both turn and session-creation IP limits in demo capacity tests; production rejects it.
-Use `GOOGLE_GENAI_USE_VERTEXAI=TRUE` for the SDK model path. Cloud execution
+The pinned ADK model accepts an explicit shared Gen AI client configured with `vertexai=True`, project, location and retry settings. Test client identity through its public `api_client` property; no environment-only SDK routing is required. Cloud execution
 also provides `PORT` and the Cloud SQL instance connection name. Admission,
 pool and timeout defaults above are typed settings with bounded overrides;
 secrets never appear in configuration summaries. The Cloud SQL connector
