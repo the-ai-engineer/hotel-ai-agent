@@ -1,9 +1,8 @@
 # Sanctuary Hotel agent architecture
 
-Status: proposed design, 27 September 2026. This document is the current design
-reference. The repository currently contains a static website with simulated
-chat in `code/website/`. None of the backend, database or deployment below is
-implemented yet. Earlier lesson and setup drafts will be aligned during the build.
+Status: earlier architecture proposal, 27 September 2026. The [implementation design](hotel-agent/design.md), dated 3 October 2026, is the current reference for the remaining build. It preserves INV-1 through INV-6 and AC-1 through AC-8, adds implementation contracts and replaces the dual app/ADK database history proposed here with one durable application history and request-local ADK sessions. Where details differ, follow the implementation design.
+
+The current repository contains the static website with simulated chat in `code/website/`. Backend and cloud resources remain proposed.
 
 ## 1. Executive summary
 
