@@ -16,7 +16,7 @@ Install Docker, uv, Python 3.12 and Node 22. Copy `.env.example` to `.env`, then
 docker compose -p hotel-ai-agent up -d postgres
 uv sync --project backend --locked --python 3.12
 (cd backend && uv run alembic upgrade head)
-uv run --project backend --directory backend python -m app.cli seed
+(cd backend && uv run python -m app.cli seed)
 bash scripts/dev.sh
 ```
 
