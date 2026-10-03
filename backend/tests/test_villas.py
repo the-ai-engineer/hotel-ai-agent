@@ -129,3 +129,57 @@ async def test_actual_adk_availability_produces_server_cards(db):
     assert len(result["cards"]) == 3
     assert {v["slug"] for v in result["cards"]} == {"forest-suite", "garden-villa", "canopy-villa"}
     assert "id" not in result["cards"][0]
+    assert "villas" not in result["availability"]
+
+
+async def test_exact_stay_boundaries(db):
+    assert (await lookup(db, 0, 1, 1)).outcome == "ok"
+    assert (await lookup(db, 1, 31, 1)).outcome == "ok"
+    assert (await lookup(db, 1, 2, 8)).outcome == "no_matches"
+    with pytest.raises(hotel.InvalidStay):
+        await lookup(db, 1, 32, 2)
+
+
+async def test_integral_float_and_data_fault_classification(db):
+    evidence = Evidence()
+    tool = policy_tools(db, evidence, Settings(_env_file=None))[2]
+    assert (await tool(*dates(2, 4), 2.0))["outcome"] == "ok"
+    async with db.transaction() as c:
+        await c.execute(text("UPDATE villas SET image='javascript:bad'"))
+    assert (await tool(*dates(2, 4), 2))["outcome"] == "unavailable"
+    assert evidence.availability is None
+
+
+async def test_parallel_lookup_cannot_restore_stale_cards(db, monkeypatch):
+    import asyncio
+
+    result = await lookup(db, 2, 4)
+    started, release = asyncio.Event(), asyncio.Event()
+
+    async def delayed(db, settings, start, end, guests):
+        if start == "older":
+            started.set()
+            await release.wait()
+            return result
+        raise hotel.InvalidStay("newer invalid input")
+
+    monkeypatch.setattr(hotel, "check_availability", delayed)
+    evidence = Evidence()
+    tool = policy_tools(db, evidence, Settings(_env_file=None))[2]
+    older = asyncio.create_task(tool("older", "end", 2))
+    await started.wait()
+    assert (await tool("newer", "end", 2))["outcome"] == "invalid_input"
+    release.set()
+    await older
+    assert evidence.availability is None
+
+
+async def test_read_only_checkout_does_not_poison_pool(db):
+    from sqlalchemy.exc import DBAPIError
+
+    with pytest.raises(DBAPIError):
+        async with db.transaction(read_only=True) as c:
+            await c.execute(text("UPDATE villas SET active=false"))
+    async with db.transaction() as c:
+        await c.execute(text("UPDATE villas SET active=true"))
+    assert len(await hotel.catalogue(db)) == 3

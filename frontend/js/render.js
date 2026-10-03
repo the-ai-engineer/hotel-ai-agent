@@ -24,7 +24,8 @@ export function answer(node, result) {
 export function cards(node, result) {
   if (!result.availability || !result.cards?.length) return;
   const dates = document.createElement("p");
-  dates.textContent = `${result.availability.check_in} to ${result.availability.check_out} · ${result.availability.guests} guests. Availability checked for this fictional hotel; no reservation made.`;
+  const checked = new Date(result.availability.checked_at).toLocaleString();
+  dates.textContent = `${result.availability.check_in} to ${result.availability.check_out} · ${result.availability.guests} guests. Checked ${checked} for this fictional hotel; no reservation made.`;
   node.append(dates);
   for (const villa of result.cards) {
     if (

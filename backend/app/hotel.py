@@ -10,7 +10,7 @@ from .schemas import Availability, Source, Villa
 async def search_policies(db, query: str) -> list[dict]:
     if not isinstance(query, str) or not query.strip() or len(query) > 200:
         return []
-    async with db.transaction() as connection:
+    async with db.transaction(read_only=True) as connection:
         rows = (
             (
                 await connection.execute(
@@ -44,7 +44,7 @@ async def search_policies(db, query: str) -> list[dict]:
 
 
 async def policy_page(db, slug: str, version: int | None):
-    async with db.transaction() as connection:
+    async with db.transaction(read_only=True) as connection:
         rows = (
             (
                 await connection.execute(
@@ -65,7 +65,7 @@ async def policy_page(db, slug: str, version: int | None):
 
 
 async def catalogue(db):
-    async with db.transaction() as c:
+    async with db.transaction(read_only=True) as c:
         rows = (
             (
                 await c.execute(
@@ -87,7 +87,7 @@ def villa_from_row(row):
 async def get_villa(db, slug: str):
     if not isinstance(slug, str) or not re.fullmatch(r"[a-z0-9-]{1,80}", slug):
         return None
-    async with db.transaction() as c:
+    async with db.transaction(read_only=True) as c:
         row = (
             (
                 await c.execute(
@@ -103,12 +103,19 @@ async def get_villa(db, slug: str):
     return villa_from_row(row) if row else None
 
 
+class InvalidStay(ValueError):
+    """The guest supplied an invalid date range or party size."""
+
+
 async def check_availability(db, settings, check_in: str, check_out: str, guests: int):
     if not all(
         isinstance(d, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) for d in [check_in, check_out]
     ):
-        raise ValueError("Use exact YYYY-MM-DD dates")
-    start, end = date.fromisoformat(check_in), date.fromisoformat(check_out)
+        raise InvalidStay("Use exact YYYY-MM-DD dates")
+    try:
+        start, end = date.fromisoformat(check_in), date.fromisoformat(check_out)
+    except ValueError as error:
+        raise InvalidStay("Use valid calendar dates") from error
     today = datetime.now(ZoneInfo(settings.hotel_timezone)).date()
     if (
         type(guests) is not int
@@ -116,9 +123,8 @@ async def check_availability(db, settings, check_in: str, check_out: str, guests
         or start < today
         or not 1 <= (end - start).days <= 30
     ):
-        raise ValueError("Stay must be 1–30 nights, begin today or later and have 1–8 guests")
-    async with db.transaction() as c:
-        await c.execute(text("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ"))
+        raise InvalidStay("Stay must be 1–30 nights, begin today or later and have 1–8 guests")
+    async with db.transaction(read_only=True, repeatable_read=True) as c:
         horizon = (
             (await c.execute(text("SELECT starts_on,ends_on FROM demo_inventory WHERE id=1")))
             .mappings()

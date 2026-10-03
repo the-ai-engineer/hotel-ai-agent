@@ -182,7 +182,7 @@ document.addEventListener("click", async (event) => {
   }
   if (event.target.closest("[data-guide]")) {
     await open();
-    send("What time can I check in?");
+    send("Tell me about the Forest Suite.");
   }
 });
 $("#closeChat").onclick = () => {

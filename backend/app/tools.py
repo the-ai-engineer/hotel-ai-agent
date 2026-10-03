@@ -6,12 +6,14 @@ class Evidence:
     def __init__(self):
         self.sources: dict[str, Source] = {}
         self.calls = 0
+        self.latest_availability_call = 0
         self.availability: Availability | None = None
 
     def admit_call(self):
         self.calls += 1
         if self.calls > 8:
             raise RuntimeError("Tool call limit reached")
+        return self.calls
 
 
 def policy_tools(db, evidence: Evidence, settings):
@@ -41,13 +43,17 @@ def policy_tools(db, evidence: Evidence, settings):
 
     async def check_availability(check_in: str, check_out: str, guests: int) -> dict:
         """Check a whole stay for exact YYYY-MM-DD dates and total guests. Never reserve rooms."""
+        sequence = evidence.admit_call()
+        evidence.latest_availability_call = sequence
         evidence.availability = None
-        evidence.admit_call()
+        if isinstance(guests, float) and guests.is_integer():
+            guests = int(guests)
         try:
             result = await hotel.check_availability(db, settings, check_in, check_out, guests)
-            evidence.availability = result
+            if evidence.latest_availability_call == sequence:
+                evidence.availability = result
             return result.model_dump(mode="json")
-        except ValueError:
+        except hotel.InvalidStay:
             return {
                 "outcome": "invalid_input",
                 "message": "Provide exact future dates, 1–30 nights and 1–8 guests.",

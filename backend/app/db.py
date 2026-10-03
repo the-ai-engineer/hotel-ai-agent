@@ -16,8 +16,15 @@ class Database:
         )
 
     @asynccontextmanager
-    async def transaction(self):
+    async def transaction(self, *, read_only=False, repeatable_read=False):
         async with self.engine.begin() as connection:
+            if read_only:
+                command = (
+                    "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
+                    if repeatable_read
+                    else "SET TRANSACTION READ ONLY"
+                )
+                await connection.execute(text(command))
             yield connection
 
     async def ready(self):

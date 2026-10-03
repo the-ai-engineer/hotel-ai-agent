@@ -35,12 +35,8 @@ class Villa(BaseModel):
     amenities: list[str] = Field(max_length=20)
     image: str = Field(pattern=r"^/assets/[a-z0-9-]+\.(png|jpg|webp)$")
 
-    @property
-    def url(self):
-        return f"/villas/{self.slug}"
 
-
-class Availability(BaseModel):
+class AvailabilitySummary(BaseModel):
     outcome: Literal["ok", "no_matches", "outside_demo_period"]
     check_in: date
     check_out: date
@@ -48,15 +44,18 @@ class Availability(BaseModel):
     checked_at: datetime
     horizon_start: date
     horizon_end: date
-    villas: list[Villa] = Field(default_factory=list, max_length=6)
     more_available: bool = False
+
+
+class Availability(AvailabilitySummary):
+    villas: list[Villa] = Field(default_factory=list, max_length=6)
 
 
 class Answer(BaseModel):
     answer: str = Field(max_length=16000)
     sources: list[Source] = Field(default_factory=list, max_length=5)
     cards: list[Villa] = Field(default_factory=list, max_length=6)
-    availability: Availability | None = None
+    availability: AvailabilitySummary | None = None
     usage: dict[str, int] = Field(default_factory=dict)
 
 

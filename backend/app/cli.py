@@ -53,17 +53,17 @@ async def seed(settings):
                 {"ids": ids},
             )
             for villa in villas:
-                id = uuid5(NAMESPACE_URL, "sanctuary/villa/" + villa["slug"])
+                villa_id = uuid5(NAMESPACE_URL, "sanctuary/villa/" + villa["slug"])
                 await connection.execute(
                     text("""INSERT INTO villas(id,slug,name,description,capacity,amenities,image)
                     VALUES(:id,:slug,:name,:description,:capacity,CAST(:amenities AS jsonb),:image)
                     ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,description=EXCLUDED.description,capacity=EXCLUDED.capacity,amenities=EXCLUDED.amenities,image=EXCLUDED.image"""),
-                    {**villa, "id": id, "amenities": json.dumps(villa["amenities"])},
+                    {**villa, "id": villa_id, "amenities": json.dumps(villa["amenities"])},
                 )
                 await connection.execute(
                     text("""INSERT INTO inventory_days(villa_id,day)
                     SELECT :id,d::date FROM generate_series(CAST(:start AS date),CAST(:end AS date)-1,interval '1 day') AS d"""),
-                    {"id": id, "start": today, "end": end},
+                    {"id": villa_id, "start": today, "end": end},
                 )
             await connection.execute(
                 text("""INSERT INTO demo_inventory VALUES(1,:start,:end)
