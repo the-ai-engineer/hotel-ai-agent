@@ -26,6 +26,10 @@ node --check code/website/app.js
 
 ## Start Here
 
+- [Architecture diagram (PNG)](./docs/diagrams/architecture.png)
+- [Implementation design for the remaining app](./docs/hotel-agent/design.md)
+- [Earlier architecture proposal](./docs/architecture.md)
+
 - [Scripted opening, architecture, and 30-minute outline](./LESSON.md)
 - [Saved hotel website and preview instructions](./code/README.md)
 - [Step-by-step CLI setup and build guide](./resources/setup-guide.md)

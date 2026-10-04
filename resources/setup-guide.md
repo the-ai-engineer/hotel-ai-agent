@@ -1,214 +1,205 @@
-# Development setup and build walkthrough
+# Set up the hotel agent with your coding assistant
 
-This guide starts with the preserved website and prepares a coding assistant to
-build the hotel agent. The backend and deployment are still planned. The CLI
-commands below do not turn the saved website into a working AI application by
-themselves.
+Open this repository in Codex, Claude Code or another coding assistant with terminal access. Paste one prompt at a time. Review its result before continuing.
 
-Documentation checked on 27 September 2026. Local checks used Agents CLI 1.7.0
-and Google Cloud CLI 549.0.0. The scaffold command succeeded in a temporary
-directory with cloud checks skipped. Authentication, paid model calls, and deployment
-have not been run as part of this documentation change.
+The website in `code/website/` works today with simulated chat. The backend, database and deployment are planned. These prompts guide that build; they do not imply those components already exist.
 
-## 1. Preview the starting point
+## Preview the website
 
-From the repository root:
-
-```bash
-cd code
-python3 -m http.server 8773 --bind 127.0.0.1 --directory website
+```text
+Read README.md and inspect the repository. Start the existing static hotel website
+on localhost, using port 8773 if it is free. Reuse an existing server only if it
+serves this website. Open the URL and verify the homepage and concierge widget.
+Keep the design unchanged. Tell me which responses are simulated and how to stop
+the server.
 ```
 
-Open http://127.0.0.1:8773/. The concierge is a scripted UI mockup. Keep it as the
-visual reference while building the backend. Use a second terminal for setup.
+**Check:** the Sanctuary Hotel homepage loads and the simulated widget works.
 
-## 2. Install the development prerequisites
+## Install the local tools
 
-The recording path is macOS. Install Python 3.11 or newer, Node.js, and uv using
-their official installers: [Python](https://www.python.org/downloads/),
-[Node.js](https://nodejs.org/en/download), and
-[uv](https://docs.astral.sh/uv/getting-started/installation/).
+```text
+Inspect my operating system, processor and installed tools. Set up Python 3.11+
+(or a newer version supported by the project), uv, Node.js and Google Cloud CLI.
+Use official installation instructions and reuse compatible installations.
+Use WSL 2 for Agents CLI on Windows; native Windows is not officially supported.
 
-From any directory, check:
+Google Cloud CLI: https://docs.cloud.google.com/sdk/docs/install-sdk
+Python: https://www.python.org/downloads/
+uv: https://docs.astral.sh/uv/getting-started/installation/
+Node.js: https://nodejs.org/en/download
 
-```bash
-python3 --version
-node --version
-uv --version
+Explain necessary PATH changes and verify each tool in a fresh shell. Report
+the versions and any manual installer steps I need to complete. Do not create
+cloud resources or change my active Google Cloud project yet.
 ```
 
-Expect a version from each command. Restart the terminal if an installer changed
-PATH. No Google credentials are needed to serve the static design.
+**Check:** Python, uv, Node and gcloud report their versions. No cloud credentials are needed for the static preview.
 
-## 3. Install Google Cloud CLI
+## Install Agents CLI and skills
 
-Use Google's [installation guide](https://docs.cloud.google.com/sdk/docs/install-sdk).
-For macOS, select the archive for your processor (Apple silicon ARM64 or Intel
-x86_64). Extract it outside the repository. Open a terminal in the directory
-containing the extracted `google-cloud-sdk` folder and run:
+```text
+Install Google Agents CLI and its skills for the coding assistant I'm using.
+Read https://google.github.io/agents-cli/guide/getting-started/ and inspect the
+current setup options first. Preview installation where supported and explain
+whether the skills will be installed globally or for this project.
 
-```bash
-./google-cloud-sdk/install.sh
+Use the official google-agents-cli package. Verify the agents-cli command works
+and that this assistant can discover google-agents-cli-workflow and the other
+installed skills. If a restart is required, tell me exactly what to reopen.
+Do not scaffold over the existing website.
 ```
 
-Accept the PATH setup, restart the terminal, then check:
+**Check:** the CLI runs and the assistant can find its installed skills. ADK is the application framework; Agents CLI helps the coding assistant build and operate it.
 
-```bash
-gcloud version
+## Select a Google Cloud project
+
+```text
+Help me set up a dedicated Google Cloud project for this hotel tutorial.
+Ask for my existing project ID, or help me choose a globally unique ID for a new
+project. Ask which authorized billing account and region to use. Verify the
+selected Gemini model is available in that location.
+
+Create or reuse a named gcloud configuration for this tutorial without changing
+unrelated configurations. If the project is new, create it before selecting it.
+Guide me through browser sign-in. Show the exact project and billing account
+before linking billing or provisioning billable resources.
+
+Verify the selected project and billing state. Help me configure a budget alert
+and notification recipient using a budget I choose. Explain that a budget alert
+does not stop spending. Separate projects help track client costs; they do not
+automatically create separate billing accounts or invoices.
 ```
 
-Expect a Google Cloud SDK version. This tutorial does not require an AI Studio
-API key. Linux and Windows users should follow the matching installer on the
-same official page.
+**Check:** the intended project is selected, billing is verified and the budget notification is configured.
 
-## 4. Select a dedicated project and sign in
+## Authenticate the local agent
 
-Use a project you own or are authorized to use, with billing configured before
-paid API calls. Choose a supported model region before recording. Replace both
-example values below with your actual project ID and selected region.
+```text
+Set up local Application Default Credentials for Gemini through Vertex AI in
+the project we selected. CLI login and application credentials are separate.
+Guide me through application-default login and set the ADC quota project.
+Enable the required model API and check the narrow IAM permissions needed.
 
-Run from any directory. Create the named configuration once; on later visits use
-`gcloud config configurations activate hotel-support-agent` instead.
+Configure GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION and
+GOOGLE_GENAI_USE_VERTEXAI=TRUE for local development without committing secrets.
+Verify a model ID supported by the project and location. With my agreement on
+model usage costs, run one small authenticated request and report success or
+the exact access problem. Never print tokens or credential file contents.
 
-```bash
-gcloud config configurations create hotel-support-agent
-gcloud init
-export GOOGLE_CLOUD_PROJECT="your-project-id"
-export GOOGLE_CLOUD_LOCATION="us-east1"
-gcloud config set project "$GOOGLE_CLOUD_PROJECT"
-gcloud config get-value project
+Use https://docs.cloud.google.com/docs/authentication/set-up-adc-local-dev-environment
+and https://google.github.io/agents-cli/guide/authentication/ as references.
+Do not create service-account keys. Cloud Run will use its own service identity.
 ```
 
-In `gcloud init`, sign in and choose the dedicated project. Confirm the final
-printed project ID before changing cloud resources. A separate gcloud
-configuration helps isolate CLI settings; it does not create a project or a
-separate billing account. See [gcloud initialization](https://docs.cloud.google.com/sdk/docs/initialize).
+**Check:** a real model request succeeds. A CLI version check or a generated scaffold alone does not prove model access.
 
-## 5. Authenticate the local application
+## Inspect an ADK starter
 
-The CLI's account and the credentials read by Python libraries are separate.
-Use Application Default Credentials (ADC) for the local agent:
+```text
+Use the installed Agents CLI skills to create a minimal ADK starter in a new,
+separate temporary directory. Check this installed version's help before choosing
+flags. Target Cloud Run and keep the existing repository unchanged.
 
-```bash
-gcloud auth application-default login
-gcloud auth application-default set-quota-project "$GOOGLE_CLOUD_PROJECT"
-export GOOGLE_GENAI_USE_VERTEXAI=TRUE
+Install its dependencies, configure it to use our selected Vertex AI model and
+start the local playground. Demonstrate one model response. Explain the agent
+definition, runner, model configuration and session storage.
+
+If the starter uses in-memory sessions, label that as temporary. Our hotel design
+requires PostgreSQL persistence. If cloud checks are skipped during scaffolding,
+do not report authentication or deployment as verified. Record the scratch
+directory and exact commands that succeeded.
 ```
 
-The browser sign-in stores ADC outside the repo. The quota-project step needs
-permission to consume services in that project. Keep the SDK environment variable
-spelling exactly as shown even when describing the platform by its current name.
-Avoid printing access tokens while recording. Cloud Run will later use a service
-identity rather than your local user credentials.
+**Check:** the playground returns a real response. Keep the starter's credentials, caches and Git metadata outside the hotel repository.
 
-Model invocation also needs the model API enabled and appropriate IAM permissions.
-An authorized project administrator can enable the model API with:
+## Build the first local slice
 
-```bash
-gcloud services enable aiplatform.googleapis.com --project "$GOOGLE_CLOUD_PROJECT"
+Paste the [implementation prompt](prompts.md). It asks the assistant to preserve the website, add PostgreSQL and prove one sourced policy answer.
+
+**Check:** a guest asks a published policy question and receives a database-backed answer with a working source link.
+
+## Complete the local hotel workflow
+
+```text
+Read docs/architecture.md and inspect what is implemented. Continue the local
+hotel workflow in small, checked steps, preserving the Sanctuary Hotel design.
+
+Add get_villa and deterministic check_availability tools over fictional inventory
+and occupancy. Validate dates, guest capacity, closed nights and checkout-exclusive
+overlaps. Keep hotel tools read-only and never expose guest reservation records.
+
+Connect the widget to FastAPI and ADK with SSE. Persist sessions and turns in
+PostgreSQL. Enforce session ownership and the design's retry, duplicate-request
+and disconnect rules. Render validated villa cards and policy source links.
+
+Prove available and fully booked stays, missing dates, unavailable evidence,
+tool failure, browser isolation and history recovery after an API restart.
+Run a fixed evaluation dataset, inspect a failing case if one occurs and rerun
+after fixing it. Keep credentials and guest content out of logs. Record exact
+run and test commands that work. Do not deploy yet.
 ```
 
-Use the narrow model-access permissions required by your project, not Owner as a
-shortcut. Calendar access is a separate integration: later share only the demo
-calendar with the application identity and use read-only Calendar scope. Cloud
-ADC alone does not grant access to a private calendar.
+**Check:** the local guest journey and failure cases pass. Inventory correctness uses deterministic tests, not an LLM judge.
 
-Sources: [ADC login](https://docs.cloud.google.com/sdk/gcloud/reference/auth/application-default/login)
-and [Agents CLI authentication](https://google.github.io/agents-cli/guide/authentication/).
+## Deploy the checked application
 
-## 6. Install Agents CLI and coding-agent skills
+```text
+Read docs/architecture.md and inspect the completed local application and tests.
+Prepare deployment only if the local checks pass. Package the static frontend
+and FastAPI/ADK backend into one container for Cloud Run.
 
-Run this from the tutorial's `code` directory. Preview setup first:
+Prepare repeatable configuration for Artifact Registry, Cloud SQL for PostgreSQL,
+Secret Manager and a scoped runtime service identity. Align application and
+database regions. Set bounded connection pools, maximum instances, request
+timeouts and application usage limits. Keep credentials server-side.
 
-```bash
-uvx google-agents-cli setup --dry-run
-uvx google-agents-cli setup
-agents-cli --version
-agents-cli --help
+Show the target project, resources and cost implications before provisioning.
+Once approved, deploy, run migrations as a release step and seed only fictional
+hotel data. Verify the deployed website, SSE, source links, villa cards and
+persistent conversations. Document revision rollback, database compatibility
+and resource-specific cleanup. Do not claim deployment succeeded until the
+cloud URL passes its smoke checks.
 ```
 
-Setup installs the CLI and skills into detected coding assistants. Its default
-skill installation is global; inspect the preview before proceeding. Use the
-coding assistant's installed-skills view to verify that
-`google-agents-cli-workflow` is available. Reopen the assistant if needed.
-The assistant itself still needs its own sign-in or subscription.
+**Check:** the deployed guest journey works, with persistent state and a recorded revision.
 
-If `agents-cli` is missing after installation, follow uv's PATH guidance and
-restart the terminal. The package is `google-agents-cli`; the command is
-`agents-cli`. ADK is the Python framework used by the generated application.
+## Observe failures and test alerts
 
-Source: [Agents CLI getting started](https://google.github.io/agents-cli/guide/getting-started/).
+```text
+Add and verify Cloud Logging, Cloud Trace and Cloud Monitoring for the deployed
+hotel application. Correlate request IDs, API/model/tool timings and errors
+without logging guest messages or credentials.
 
-## 7. Inspect a generated starter without overwriting the design
-
-Use a separate scratch directory. In the recording, ask the coding assistant to
-run and explain these commands. The scratch project is for inspecting generated
-files, not a second repository inside this tutorial.
-
-```bash
-HOTEL_SCRATCH_DIR=$(mktemp -d)
-cd "$HOTEL_SCRATCH_DIR"
-agents-cli create hotel-agent --prototype --deployment-target cloud_run --session-type in_memory --skip-checks --yes
-cd hotel-agent
-agents-cli install
-agents-cli playground
+Introduce a clearly labelled, demo-only availability lookup failure. Show the
+guest fallback and failing trace span, remove the fault and verify recovery.
+Configure an alert for repeated failures and test delivery to my chosen
+notification channel. Record the test result, resource usage and who responds
+to alerts. Do not leave the failure switch enabled.
 ```
 
-Expect a generated project and a local playground URL printed by the CLI. The
-prototype deliberately starts with in-memory sessions; that is insufficient for
-our deployed design. `--skip-checks` skips scaffold-time cloud validation, not
-runtime authentication. Model requests can still fail or incur usage charges.
-Read the generated environment configuration and select a model available to
-your project/region before testing it. Do not copy generated `.env`, lockfiles,
-caches, or nested Git metadata into this teaching repository.
+**Check:** the failure is visible, recovery works and a test alert arrives.
 
-This is a starter inspection workflow, not a claim that the hotel backend exists.
-Scaffold creation was tested with 1.7.0. Dependency installation and playground
-startup were checked in CLI help only; cloud behavior remains unverified.
-The online reference also lists `cmd-info`, which was absent from the installed
-1.7.0 command set, so this walkthrough does not depend on it.
-Source: [CLI reference](https://google.github.io/agents-cli/cli/).
+## Troubleshoot or clean up
 
-## 8. Build the hotel workflow through the coding assistant
+```text
+Inspect the current state and the last failed step. Diagnose it before changing
+anything. For model access, check project, billing, API enablement, ADC, IAM,
+model ID and region separately. For missing commands, check the installed tool
+and PATH. For lost history, check persistence rather than assuming Cloud Run
+keeps process memory.
 
-Return to the tutorial folder. Give the assistant the
-[implementation prompt](./prompts.md), the existing `code/website/` files, and
-[lesson architecture](../LESSON.md#proposed-architecture). Build in this order:
+If I ask for cleanup, list only the resources and local processes created for
+this tutorial. Show dependencies and any data that would be deleted before
+removing them. Include Cloud SQL and stored artifacts; deleting Cloud Run alone
+does not remove them. Keep unrelated projects and resources unchanged.
+```
 
-1. Add the Python API and ADK agent. Prove one guide answer with a source link.
-2. Add local PostgreSQL guide content and persistent, server-owned sessions.
-3. Add calendar lookup against fictional events in one demo calendar. Test empty
-   results, time zones, and timeouts separately.
-4. Add confirmed host requests with an idempotency key and a staff-only list.
-5. Replace the widget's scripted responses with streaming API output. Keep the
-   visual design, but remove fixture-only room/date assumptions.
-6. Run deterministic tool tests and the lesson's evaluation cases. Compare manual
-   verdicts with a judge and report model usage separately from infrastructure.
-7. After settling Cloud Run versus managed Agent Runtime, generate and review
-   deployment configuration. Configure Cloud SQL, service identity, secrets,
-   limits, and tracing before running the deployment command.
-8. Repeat the guest journey on the cloud URL, inject a calendar failure, inspect
-   its trace, and verify the handoff persists after an application restart.
+## Verification notes
 
-Each step should produce a working slice before continuing. Record the exact
-commands, output, chosen model, and observed failures as implementation proceeds.
-Do not present this sequence as an already completed cloud deployment. A custom
-FastAPI website and persistent data need integration beyond the default scaffold.
+These are prompts for a coding assistant, not a pre-tested installer. Cloud authentication, model calls and deployment must be verified in your own project as you work through them. Current repository status remains documented in [README.md](../README.md).
 
-## Troubleshooting and cleanup
-
-| Symptom | Check |
-| --- | --- |
-| `agents-cli` not found | uv tool PATH and a fresh terminal; compare package name with command name. |
-| Missing ADC | Complete application-default login; CLI login alone is not enough. |
-| 403 from model | Selected project, model API, billing, IAM, model access and region. |
-| Calendar lookup denied | Calendar API, read-only scope, and access to that specific calendar. |
-| Playground works but website is static | Expected until step 8 connects the widget to the backend. |
-| Conversation disappears on restart | In-memory starter sessions must be replaced before deployment. |
-
-Stop preview/playground servers with Ctrl-C. New conversation resets the static
-widget. The scratch starter is disposable; remove only the directory recorded in
-`HOTEL_SCRATCH_DIR` after inspecting it. No cloud deployment is performed by this
-guide's scaffold command. If you later provision resources, record the exact
-resources and their teardown instructions with that implementation; deleting a
-Cloud Run service alone will not remove Cloud SQL or stored build artifacts.
+References checked on 27 September 2026:
+[Agents CLI getting started](https://google.github.io/agents-cli/guide/getting-started/) ·
+[Google Cloud CLI installation](https://docs.cloud.google.com/sdk/docs/install-sdk) ·
+[Local ADC](https://docs.cloud.google.com/docs/authentication/set-up-adc-local-dev-environment).
