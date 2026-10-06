@@ -8,12 +8,13 @@ from uuid import UUID
 
 import anyio
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import PlainTextResponse, StreamingResponse
+from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app.agent import answer
 from app.db import connect, token_hash
+from app.inventory import get_villa
 from app.settings import Settings
 
 log = logging.getLogger("hotel")
@@ -289,6 +290,19 @@ def create_app(settings=None):
             media_type="text/event-stream",
             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
         )
+
+    @app.get("/api/villas/{villa_id}")
+    async def villa_details(villa_id: str):
+        villa = await get_villa(app.state.pool, villa_id)
+        if not villa:
+            raise HTTPException(404, "Villa not found")
+        return villa
+
+    @app.get("/villas/{villa_id}")
+    async def villa_page(villa_id: str):
+        if not await get_villa(app.state.pool, villa_id):
+            raise HTTPException(404, "Villa not found")
+        return FileResponse(Path(__file__).resolve().parents[2] / "frontend/villa.html")
 
     app.mount(
         "/",

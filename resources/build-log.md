@@ -76,3 +76,11 @@ Browser proof: confirmed reset and refresh show a fresh welcome screen; cancel p
 Markdown replies use locally served, pinned marked and DOMPurify modules. Streaming renders token bursts every 100 ms and flushes the saved result immediately. DOM tests verify formatting, stripping executable markup and model links, final flush, and cancelled timers. `npm ci --prefix frontend` and `npm test --prefix frontend` run these test-only dependencies; the site needs no frontend build.
 
 Final checks: 28 PostgreSQL/backend tests passed. Browser confirmed saved Markdown formatting, a live cancellation-policy follow-up, refreshed villa cards, correct Garden Villa navigation, reset cancellation/confirmation, and a mobile composer within viewport bounds. No browser console warnings/errors. Independent reviewer and Claude Opus approved the implementation; Claude also reviewed Markdown safety and streaming. The optional visual detector ran with regex fallback because its parser modules were unavailable, so browser inspection supplied the visual check.
+
+## Villa detail pages
+
+Added `/villas/forest-suite` and `/villas/garden-villa`, sharing one static detail template. Public villa facts come from `/api/villas/{id}` and the existing validated PostgreSQL catalogue. Cards and homepage actions open the detail pages; the same guest cookie preserves chat. Removed the requested widget footer. Added a connected recording sequence in demo.md.
+
+Checks: backend route/facts/404 regression, ruff, frontend syntax, Markdown and initialization regressions, website dependencies and desktop/mobile browser navigation.
+
+Verified 29 backend tests and frontend checks. Browser: both villa detail pages, homepage details action, preserved conversation and availability prompt passed. Claude and independent review approved; the showcase action retains its original arrow.

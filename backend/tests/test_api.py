@@ -315,3 +315,16 @@ async def test_availability_result_is_saved_in_history(client, pool):
     saved = (await client.get("/api/history")).json()["turns"][0]["availability"]
     assert saved == availability
     assert [villa["id"] for villa in saved["cards"]] == ["garden-villa"]
+
+
+async def test_public_villa_pages_and_facts(client):
+    for villa_id, bedrooms in [("forest-suite", 1), ("garden-villa", 2)]:
+        page = await client.get(f"/villas/{villa_id}")
+        assert page.status_code == 200
+        assert '<base href="/">' in page.text
+        assert "AI concierge for a fictional hotel" not in page.text
+        villa = (await client.get(f"/api/villas/{villa_id}")).json()
+        assert villa["id"] == villa_id
+        assert villa["bedrooms"] == bedrooms
+    assert (await client.get("/villas/not-a-villa")).status_code == 404
+    assert (await client.get("/api/villas/not-a-villa")).status_code == 404

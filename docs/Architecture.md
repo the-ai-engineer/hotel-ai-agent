@@ -174,3 +174,7 @@ Each Linear slice ends with a guest-visible result and recorded verification. Cr
 The local prototype uses an owned guest cookie with one current conversation UUID and loads only completed turns from that conversation. “New conversation” rotates the UUID atomically, clears the visible chat and model context, and preserves earlier records for retention. It is rejected while an answer is active. Closing the widget does not reset the conversation. The retention cleanup below is planned, not yet implemented. PostgreSQL prevents simultaneous submissions, and final output is saved before completion is signalled. Full repeated-turn result replay, crash recovery, shared abuse budgets and per-instance model admission belong to GRA-214. Do not expose this slice publicly. Source content is served as plain text at the exact published revision.
 
 Ordered SQL migrations run under a transaction and advisory lock with a schema version ledger. This keeps the initial schema change path small; migrations and seeds are explicit commands, never startup side effects.
+
+### Villa detail pages
+
+The website has public `/villas/{id}` detail routes, served by the same Cloud Run application using one static template. `/api/villas/{id}` returns validated, read-only PostgreSQL villa facts. Unknown IDs return 404. Cards and homepage actions link to these pages. Root-relative assets and the same host-only guest cookie keep the concierge and saved conversation consistent across navigation.
