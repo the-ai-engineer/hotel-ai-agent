@@ -67,3 +67,22 @@ The agent looks up the current guest's booking and prepares a note. The guest re
 5. Refresh: the reservation stays confirmed, and the note status stays pending. Repeat the availability search: the reserved villa is excluded.
 
 Today's property date is injected into the prompt. October 2026 through September 2027 are covered by sample inventory. Booking references alone cannot access other guests' records. The sample browser session lasts 24 hours. Real returning guests need authentication.
+
+## Relative dates and booking follow-ups
+
+- “Which villas are available for two guests next weekend?” The agent states its Friday-to-Sunday assumption and checks immediately. The upcoming Friday must be after today; on a Friday it uses the following Friday. Guests can correct the dates before booking.
+- “Actually, 16 to 18 October instead.” It retains the guest count and checks the corrected dates.
+- “Great, can I book it?” It refreshes availability for the agreed stay and shows a fresh Reserve card. The guest still confirms on the booking page.
+
+For a stable recording, explicit dates are safest. Demo reservations change availability, so use a new unblocked stay for each booking take. Do not repeatedly book the same dates and expect the same result.
+
+## Live smoke evaluations
+
+```bash
+uv run --directory backend python evaluate.py --output /tmp/hotel-evals.json
+uv run --directory backend python evaluate.py --holdout --output /tmp/hotel-evals-holdout.json
+```
+
+`evals/demo-smoke.json` freezes the property date at 7 October 2026 for repeatable date assertions. The website still uses the real Bali date. The runner exercises the real ADK agent, Vertex and PostgreSQL without booking writes. It checks structured availability, dates, cards, source reads and selected phrases. Inspect the saved replies as well: these checks are smoke coverage, not a grounding score or proof every answer is correct. Booking ownership and confirmation are covered by backend tests and browser checks.
+
+Useful failure to explain on camera: a booking follow-up initially referred to an old card without refreshing availability. Strengthening the date/card assertions caught it; the prompt now requires a fresh check. No IDE or extra queue is needed for this refinement.

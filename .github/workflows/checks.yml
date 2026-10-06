@@ -27,7 +27,7 @@ jobs:
       - run: npm ci --prefix frontend
       - run: npm test --prefix frontend
       - run: uv sync --locked --directory backend
-      - run: uv run --directory backend ruff check app tests
+      - run: uv run --directory backend ruff check app tests evaluate.py
       - run: uv run --directory backend pytest -q
       - run: python3 scripts/verify_website.py
       - run: node --check frontend/js/chat.js

@@ -5,3 +5,10 @@ header{justify-content:flex-start;gap:30px;padding:0 6%}header .brand{position:s
 /* Cinematic hero, with the original still underneath as a fallback. */
 .hero>video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 53%;pointer-events:none}
 @media(max-width:600px){.hero>video{object-position:44% center}}
+
+/* Keep navigation readable above both the drawer and the hero image. */
+.menu-open header{position:fixed;background:var(--bg);color:var(--ink)}
+.menu-open header .header-links button{border-bottom-color:var(--ink)}
+.menu-open #menuButton span{background:var(--ink)}
+#menu{padding-top:155px;overflow-y:auto}
+@media(max-width:600px){#menu{padding-top:135px}}
