@@ -95,21 +95,45 @@ def create_app(settings=None):
         response.headers["Cache-Control"] = "no-store"
         return {"status": "ready"}
 
+    @app.post("/api/conversation")
+    async def new_conversation(request: Request, response: Response):
+        check_origin(request)
+        key = await owner(request)
+        async with app.state.pool.acquire(timeout=3) as conn:
+            conversation = await conn.fetchval(
+                """UPDATE guest_sessions SET conversation_id=gen_random_uuid(),active_turn=NULL,busy_until=NULL
+                WHERE token_hash=$1 AND (busy_until IS NULL OR busy_until<now()) RETURNING conversation_id""",
+                key,
+            )
+        if not conversation:
+            raise HTTPException(
+                409, "Stop the current answer before starting a new conversation"
+            )
+        response.headers["Cache-Control"] = "no-store"
+        return {"status": "ready"}
+
     @app.get("/api/history")
     async def history(request: Request, response: Response):
         key = await owner(request)
         async with app.state.pool.acquire(timeout=3) as conn:
             rows = await conn.fetch(
-                """SELECT question,answer,sources FROM (
-                SELECT question,answer,sources,created_at FROM turns
-                WHERE session_hash=$1 AND status='completed' ORDER BY created_at DESC LIMIT 20
+                """SELECT question,answer,sources,availability FROM (
+                SELECT question,answer,sources,availability,created_at FROM turns
+                WHERE session_hash=$1 AND conversation_id=(SELECT conversation_id FROM guest_sessions WHERE token_hash=$1) AND status='completed' ORDER BY created_at DESC LIMIT 20
             ) recent ORDER BY created_at""",
                 key,
             )
         response.headers["Cache-Control"] = "no-store"
         return {
             "turns": [
-                {**dict(row), "sources": json.loads(row["sources"])} for row in rows
+                {
+                    **dict(row),
+                    "sources": json.loads(row["sources"]),
+                    "availability": json.loads(row["availability"])
+                    if row["availability"]
+                    else None,
+                }
+                for row in rows
             ]
         }
 
@@ -138,7 +162,7 @@ def create_app(settings=None):
         async with app.state.pool.acquire(timeout=3) as conn, conn.transaction():
             acquired = await conn.fetchval(
                 """UPDATE guest_sessions SET active_turn=$2,busy_until=now()+interval '90 seconds'
-                WHERE token_hash=$1 AND (busy_until IS NULL OR busy_until<now()) RETURNING token_hash""",
+                WHERE token_hash=$1 AND (busy_until IS NULL OR busy_until<now()) RETURNING conversation_id""",
                 key,
                 question.turn_id,
             )
@@ -152,14 +176,15 @@ def create_app(settings=None):
             if duplicate:
                 raise HTTPException(409, "This question was already submitted")
             await conn.execute(
-                "INSERT INTO turns(id,session_hash,question,status) VALUES ($1,$2,$3,$4)",
+                "INSERT INTO turns(id,session_hash,question,status,conversation_id) VALUES ($1,$2,$3,$4,$5)",
                 question.turn_id,
                 key,
                 question.message,
                 "running",
+                acquired,
             )
             rows = await conn.fetch(
-                """SELECT question,answer FROM turns WHERE session_hash=$1 AND status='completed'
+                """SELECT question,answer FROM turns WHERE session_hash=$1 AND conversation_id=(SELECT conversation_id FROM guest_sessions WHERE token_hash=$1) AND status='completed'
                 ORDER BY created_at DESC LIMIT 20""",
                 key,
             )
@@ -216,10 +241,11 @@ def create_app(settings=None):
                         if not valid:
                             raise RuntimeError("Turn expired")
                         await conn.execute(
-                            "UPDATE turns SET answer=$2,sources=$3::jsonb,status='completed' WHERE id=$1 AND status='running'",
+                            "UPDATE turns SET answer=$2,sources=$3::jsonb,availability=$4::jsonb,status='completed' WHERE id=$1 AND status='running'",
                             question.turn_id,
                             final["answer"],
                             json.dumps(final["sources"]),
+                            json.dumps(final.get("availability")),
                         )
                         await conn.execute(
                             "UPDATE guest_sessions SET active_turn=NULL,busy_until=NULL WHERE token_hash=$1 AND active_turn=$2",

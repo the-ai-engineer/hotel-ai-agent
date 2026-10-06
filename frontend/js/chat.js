@@ -1,3 +1,5 @@
+import { renderReply, streamReply } from './reply.js';
+
 const chat = document.querySelector('#chat');
 const launch = document.querySelector('#launch');
 const close = document.querySelector('#closeChat');
@@ -7,6 +9,11 @@ const send = form.querySelector('[type=submit]');
 const messages = document.querySelector('#messages');
 const content = document.querySelector('#chatContent');
 const stop = document.querySelector('#stopAnswer');
+const welcome = document.querySelector('#chatWelcome');
+const reset = document.querySelector('#newConversation');
+const resetConfirm = document.querySelector('#resetConfirm');
+const cancelReset = document.querySelector('#cancelReset');
+const confirmReset = document.querySelector('#confirmReset');
 let opener;
 let ready = false;
 let preparing;
@@ -15,13 +22,20 @@ let controller;
 function bubble(text, role) {
   const node = document.createElement('div');
   node.className = `concierge-message ${role}`;
-  node.textContent = text;
+  const body = document.createElement('div');
+  body.className = 'concierge-text';
+  if (role === 'assistant') renderReply(body, text);
+  else body.textContent = text;
+  node.append(body);
   messages.append(node);
+  welcome.hidden = true;
   content.scrollTop = content.scrollHeight;
   return node;
 }
 
 function renderSources(node, sources) {
+  const group = document.createElement('div');
+  group.className = 'concierge-sources';
   for (const source of sources) {
     if (!/^\/api\/sources\/[a-z0-9-]+\/[1-9][0-9]*$/.test(source.url)) continue;
     const link = document.createElement('a');
@@ -30,8 +44,60 @@ function renderSources(node, sources) {
     link.rel = 'noopener';
     link.textContent = `${source.title} · v${source.revision}`;
     link.className = 'concierge-source';
-    node.append(link);
+    group.append(link);
   }
+  if (group.childElementCount) node.append(group);
+}
+
+function renderAvailability(node, result) {
+  if (!result) return;
+  const date = (value) => new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+  }).format(new Date(`${value}T00:00:00Z`));
+  const summary = document.createElement('div');
+  summary.className = 'availability-summary';
+  summary.textContent = `${date(result.check_in)} – ${date(result.check_out)} · ${result.nights} ${result.nights === 1 ? 'night' : 'nights'} · ${result.guests} ${result.guests === 1 ? 'guest' : 'guests'}`;
+  node.append(summary);
+  const cards = document.createElement('div');
+  cards.className = 'villa-results';
+  const approvedImages = {
+    'forest-suite': 'assets/suite.png',
+    'garden-villa': 'assets/bedroom-daylight.png',
+  };
+  for (const villa of result.cards || []) {
+    if (!approvedImages[villa.id] || villa.image !== approvedImages[villa.id]) continue;
+    const card = document.createElement('article');
+    card.className = 'villa-card';
+    const image = document.createElement('img');
+    image.className = 'villa-card-photo';
+    image.src = villa.image;
+    image.alt = villa.name;
+    image.loading = 'lazy';
+    const body = document.createElement('div');
+    body.className = 'villa-card-body';
+    const title = document.createElement('h3');
+    title.className = 'villa-card-title';
+    title.textContent = villa.name;
+    const meta = document.createElement('p');
+    meta.className = 'villa-card-meta';
+    meta.textContent = `Up to ${villa.capacity} guests · ${villa.bedrooms} ${villa.bedrooms === 1 ? 'bedroom' : 'bedrooms'}`;
+    const details = document.createElement('p');
+    details.className = 'villa-card-details';
+    details.textContent = villa.beds.join(' · ');
+    const link = document.createElement('a');
+    link.className = 'villa-card-link';
+    link.href = `/?villa=${villa.id}#villas`;
+    link.textContent = 'View villa';
+    body.append(title, meta, details, link);
+    card.append(image, body);
+    cards.append(card);
+  }
+  if (cards.childElementCount) node.append(cards);
+  const note = document.createElement('p');
+  note.className = 'villa-card-details';
+  const checked = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(result.checked_at));
+  note.textContent = `Fictional inventory · checked ${checked} · no reservation held`;
+  node.append(note);
 }
 
 async function api(path, options = {}) {
@@ -52,9 +118,12 @@ function prepare() {
       const response = await api('/api/history');
       const data = await response.json();
       messages.replaceChildren();
+      welcome.hidden = data.turns.length > 0;
       for (const turn of data.turns) {
         bubble(turn.question, 'guest');
-        renderSources(bubble(turn.answer, 'assistant'), turn.sources);
+        const node = bubble(turn.answer, 'assistant');
+        renderSources(node, turn.sources);
+        renderAvailability(node, turn.availability);
       }
       ready = true;
     })().finally(() => { preparing = undefined; });
@@ -66,7 +135,8 @@ async function openChat(button) {
   opener = button;
   chat.hidden = false;
   launch.hidden = true;
-  close.focus();
+  if (button.dataset?.ask) question.focus();
+  else close.focus();
   try {
     await prepare();
   } catch (error) {
@@ -89,9 +159,45 @@ document.addEventListener('click', (event) => {
 });
 close.addEventListener('click', closeChat);
 chat.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') closeChat();
+  if (event.key === 'Escape') {
+    if (!resetConfirm.hidden) { resetConfirm.hidden = true; reset.focus(); }
+    else closeChat();
+  }
 });
 stop.addEventListener('click', () => controller?.abort());
+reset.addEventListener('click', () => {
+  resetConfirm.hidden = false;
+  cancelReset.focus();
+});
+cancelReset.addEventListener('click', () => {
+  resetConfirm.hidden = true;
+  reset.focus();
+});
+confirmReset.addEventListener('click', async () => {
+  confirmReset.disabled = true;
+  cancelReset.disabled = true;
+  send.disabled = true;
+  question.disabled = true;
+  reset.disabled = true;
+  try {
+    await prepare();
+    await api('/api/conversation', { method: 'POST' });
+    messages.replaceChildren();
+    welcome.hidden = false;
+    resetConfirm.hidden = true;
+    question.value = '';
+    question.focus();
+  } catch (error) {
+    bubble(error.message, 'notice');
+  } finally {
+    confirmReset.disabled = false;
+    cancelReset.disabled = false;
+    send.disabled = false;
+    question.disabled = false;
+    reset.disabled = false;
+    question.focus();
+  }
+});
 
 // fetch POST streaming works with the same-origin session cookie.
 async function readEvents(response, onEvent) {
@@ -122,17 +228,24 @@ form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const text = question.value.trim();
   if (!text || controller) return;
+  if (!resetConfirm.hidden) return;
   controller = new AbortController();
+  reset.disabled = true;
+  messages.setAttribute('aria-busy', 'true');
   send.disabled = true;
   question.disabled = true;
   stop.hidden = false;
   let node;
   let committed = false;
+  let rendering;
   try {
     await prepare();
     bubble(text, 'guest');
     question.value = '';
     node = bubble('Checking hotel information…', 'assistant');
+    rendering = streamReply(node.querySelector('.concierge-text'), () => {
+      content.scrollTop = content.scrollHeight;
+    });
     let draft = '';
     const response = await api('/api/chat', {
       method: 'POST',
@@ -143,15 +256,16 @@ form.addEventListener('submit', async (event) => {
     await readEvents(response, (name, data) => {
       if (name === 'text') {
         draft += data.text;
-        node.textContent = draft;
+        rendering.update(draft);
       } else if (name === 'result') {
-        node.textContent = data.answer;
+        rendering.finish(data.answer);
         renderSources(node, data.sources);
+        renderAvailability(node, data.availability);
         committed = true;
+        content.scrollTop = content.scrollHeight;
       } else if (name === 'error') {
         throw new Error(data.message);
       }
-      content.scrollTop = content.scrollHeight;
     });
     if (!committed) throw new Error('The connection ended before the answer was saved. Please try again.');
   } catch (error) {
@@ -161,7 +275,10 @@ form.addEventListener('submit', async (event) => {
       question.value = text;
     }
   } finally {
+    rendering?.cancel();
     controller = undefined;
+    reset.disabled = false;
+    messages.setAttribute('aria-busy', 'false');
     send.disabled = false;
     question.disabled = false;
     stop.hidden = true;

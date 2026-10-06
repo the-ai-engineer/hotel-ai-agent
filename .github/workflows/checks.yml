@@ -21,6 +21,11 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --prefix frontend
+      - run: npm test --prefix frontend
       - run: uv sync --locked --directory backend
       - run: uv run --directory backend ruff check app tests
       - run: uv run --directory backend pytest -q

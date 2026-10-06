@@ -1,7 +1,9 @@
 import json
 
+from app import inventory
 
-class PolicyTools:
+
+class HotelTools:
     """One invocation's read-only tools and evidence. Never shared between guests."""
 
     def __init__(self, pool):
@@ -10,6 +12,7 @@ class PolicyTools:
         self.calls = 0
         self.characters = 0
         self.listed = set()
+        self.availability = None
 
     def admit(self):
         self.calls += 1
@@ -63,3 +66,23 @@ class PolicyTools:
         }
         self.sources[key] = source
         return {**source, "body": row["body"]}
+
+    async def get_villa(self, villa_id: str) -> dict:
+        """Get public villa facts and bedding. Known IDs: forest-suite, garden-villa. Not availability."""
+        if not self.admit():
+            return {"error": "tool_limit"}
+        villa = await inventory.get_villa(self.pool, villa_id)
+        return {"villa": villa} if villa else {"error": "unknown_villa"}
+
+    async def check_availability(
+        self, check_in: str, check_out: str, guests: int
+    ) -> dict:
+        """Check every night for exact YYYY-MM-DD dates and total guests, including children and infants."""
+        if not self.admit():
+            return {"error": "tool_limit"}
+        result = await inventory.check_availability(
+            self.pool, check_in, check_out, guests
+        )
+        # Retain the latest successful search only. Invalid subsequent input clears prior cards.
+        self.availability = result if "error" not in result else None
+        return result

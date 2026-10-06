@@ -107,7 +107,7 @@ The model explains evidence and chooses tools. It cannot write bookings, run arb
 
 ## Ownership, retries and failure
 
-- Use a random session token in an HttpOnly, host-only cookie. Require Secure in deployment, SameSite=Lax and a fixed 24-hour expiry. Store only the conversation ID in browser storage.
+- Use a random session token in an HttpOnly, host-only cookie. Require Secure in deployment, SameSite=Lax and a fixed 24-hour expiry. Do not store session credentials or conversation content in browser storage.
 - Check session ownership for every conversation/turn read and write. Validate allowed Origin on browser mutations. An ID alone grants no access.
 - Reserve one active turn per conversation in a short PostgreSQL transaction. A unique client turn UUID prevents duplicate invocations across instances.
 - A repeated completed UUID returns the saved result. A running attempt provides its status URL. Failed/interrupted attempts require an explicit new attempt.
@@ -171,6 +171,6 @@ Each Linear slice ends with a guest-visible result and recorded verification. Cr
 
 ## First policy slice limits
 
-The local prototype stores a single owned conversation per guest cookie and loads only completed turns. PostgreSQL prevents simultaneous submissions, and final output is saved before completion is signalled. Full repeated-turn result replay, crash recovery, shared abuse budgets and per-instance model admission belong to GRA-214. Do not expose this slice publicly. Source content is served as plain text at the exact published revision.
+The local prototype uses an owned guest cookie with one current conversation UUID and loads only completed turns from that conversation. “New conversation” rotates the UUID atomically, clears the visible chat and model context, and preserves earlier records for retention. It is rejected while an answer is active. Closing the widget does not reset the conversation. The retention cleanup below is planned, not yet implemented. PostgreSQL prevents simultaneous submissions, and final output is saved before completion is signalled. Full repeated-turn result replay, crash recovery, shared abuse budgets and per-instance model admission belong to GRA-214. Do not expose this slice publicly. Source content is served as plain text at the exact published revision.
 
 Ordered SQL migrations run under a transaction and advisory lock with a schema version ledger. This keeps the initial schema change path small; migrations and seeds are explicit commands, never startup side effects.

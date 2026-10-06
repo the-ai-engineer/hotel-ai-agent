@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="chat.css">
 </head>
 <body>
 <header>
@@ -129,40 +130,58 @@
 </main>
 <aside id="chat" class="chat" hidden aria-label="Guest concierge">
 <div class="chat-head">
-<span id="avatar">S</span>
+<span id="avatar" aria-hidden="true">S</span>
 <div>
-<strong id="chatName">Your Sanctuary concierge</strong>
-<small>Hotel information</small>
+<strong id="chatName">Sanctuary concierge</strong>
+<small>Hotel information and villa availability</small>
 </div>
-<button id="closeChat" aria-label="Close concierge">×</button>
+<button id="closeChat" aria-label="Close concierge">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+</button>
+</div>
+<div class="chat-actions">
+<button id="newConversation" type="button">New conversation</button>
+</div>
+<div id="resetConfirm" class="chat-reset-confirm" hidden>
+<p>Start a new conversation? This chat will leave the current view.</p>
+<div>
+<button id="cancelReset" type="button">Keep this chat</button>
+<button id="confirmReset" type="button">Start new</button>
+</div>
 </div>
 <div class="chat-content" id="chatContent">
 <div id="chatWelcome">
-<div class="greeting">How can we help?</div>
-<p>Ask about our villas, dining or your stay.</p>
-<p>Ask about dining, arrival or hotel policies. This is a fictional hotel demo.</p>
+<h2 class="greeting">How may we help?</h2>
+<p>Ask about the villas, dining, arrival or hotel policies.</p>
+<div class="chat-suggestions">
+<button class="suggestion" data-ask="What time is breakfast?">What time is breakfast?</button>
+<button class="suggestion" data-ask="What are the check-in and check-out times?">Check-in and check-out times</button>
+<button class="suggestion" data-ask="Which villas are available for two guests next weekend?">Villa availability for two</button>
+</div>
 </div>
 <div id="messages" aria-live="polite">
 </div>
 </div>
 <div class="chat-bottom">
 <form id="chatForm">
-<input id="question" aria-label="Ask the concierge" placeholder="How may we help you?" maxlength="2000">
-<button type="submit" aria-label="Send question">↑</button>
+<input id="question" aria-label="Ask the concierge" placeholder="Ask a question" maxlength="2000" autocomplete="off">
+<button type="submit" aria-label="Send question">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+</button>
 </form>
 <button id="stopAnswer" type="button" hidden>Stop answer</button>
-<p>AI concierge · No reservations made</p>
+<p>AI concierge for a fictional hotel. No reservations are made.</p>
 </div>
 </aside>
 <button id="launch" data-chat>
-<svg viewBox="0 0 24 24">
+<svg viewBox="0 0 24 24" aria-hidden="true">
 <path d="M21 11a8 8 0 0 1-8 8H6l-4 3 1-7a9 9 0 1 1 18-4Z"/>
 </svg>
 <span>YOUR CONCIERGE</span>
 </button>
-<script type="module" src="js/site.js">
+<script type="module" src="js/site.js?v=2">
 </script>
-<script type="module" src="js/chat.js">
+<script type="module" src="js/chat.js?v=2">
 </script>
 </body>
 </html>

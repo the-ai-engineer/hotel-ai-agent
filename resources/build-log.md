@@ -53,5 +53,26 @@ and deployment integration are later slices; do not claim CLI run/eval passed he
 
 ## Remaining
 
-Villa availability/cards, complete durable turn recovery and budget limits,
+Complete durable turn recovery and budget limits,
 Agents CLI evaluations, Cloud Run deployment and operational proof remain in Linear.
+
+## GRA-213: villa availability and widget
+
+Added read-only PostgreSQL inventory tools, full-stay photo cards and a confirmed New conversation reset. Claude Opus refined the widget styling. Reset rotates the conversation UUID without deleting records; the next model invocation has empty history.
+
+Verified commands:
+
+```bash
+uv run --directory backend python -m app.db migrate
+uv run --directory backend python -m app.db seed
+uv run --directory backend ruff check app tests
+uv run --directory backend pytest -q
+node frontend/tests/chat.test.cjs
+python3 scripts/verify_website.py
+```
+
+Browser proof: confirmed reset and refresh show a fresh welcome screen; cancel preserves the chat. Reset is disabled during an answer. Live Vertex family question returns Garden Villa for 1–4 November 2026, four guests, with family policy evidence and an unfenced-pool warning.
+
+Markdown replies use locally served, pinned marked and DOMPurify modules. Streaming renders token bursts every 100 ms and flushes the saved result immediately. DOM tests verify formatting, stripping executable markup and model links, final flush, and cancelled timers. `npm ci --prefix frontend` and `npm test --prefix frontend` run these test-only dependencies; the site needs no frontend build.
+
+Final checks: 28 PostgreSQL/backend tests passed. Browser confirmed saved Markdown formatting, a live cancellation-policy follow-up, refreshed villa cards, correct Garden Villa navigation, reset cancellation/confirmation, and a mobile composer within viewport bounds. No browser console warnings/errors. Independent reviewer and Claude Opus approved the implementation; Claude also reviewed Markdown safety and streaming. The optional visual detector ran with regex fallback because its parser modules were unavailable, so browser inspection supplied the visual check.
