@@ -3,11 +3,12 @@
 All facts and inventory here are invented for this tutorial. These files are the reviewed source content, not an implemented retrieval system.
 
 - `policies/`: published guest information. Each file has a stable document ID and revision.
+- `catalogue.json`: reviewed titles, summaries and keywords; file paths are importer-only.
 - `villas.json`: public villa catalogue. Never contains guest details.
 - `availability.json`: explicit nightly inventory for a fixed demonstration window.
 - `../evals/guest-questions.json`: questions, expected facts, tools and failure behavior.
 
-Build a repeatable importer into PostgreSQL. Search published policy sections with full-text search; check availability with typed, deterministic SQL. Return source IDs and passages for policy answers. No embeddings are needed initially.
+Build a repeatable importer into PostgreSQL. Expose `list_documents()` for published metadata and `read_document(document_id, revision)` for a complete selected document. Check availability with typed, deterministic SQL. Return versioned sources; no keyword/full-text or vector search is needed.
 
 Availability is only for 1–7 November 2026. Checkout is exclusive. Missing dates mean unknown/unavailable, never assumed open. A cancelled booking does not block inventory. Keep guest names and booking identifiers out of tool responses.
 
@@ -26,8 +27,8 @@ Before filming, agree this pack as the hotel brief. Change the facts and expecte
 
 ## How retrieval will work
 
-The agent chooses search terms and calls `search_policies`. The tool searches all published PostgreSQL sections and returns matching passages with document IDs, titles and revisions. It can search again with narrower terms. This is agent-driven retrieval over full-text search, not a vector-search requirement or unrestricted filesystem access.
+The agent lists the published catalogue, selects one or more IDs using summaries and keywords, and reads their complete bodies. `list_documents` returns ID, title, summary, keywords and revision; it does not return bodies or file paths. `read_document` returns body, title, ID, revision and a source link. Factual policy answers must use read bodies, never catalogue summaries alone.
 
-The catalogue above is for reviewers, not a separate runtime index. The importer records document metadata and search-ready sections. Changes to Markdown require a successful re-import before the agent sees them; refresh existing IDs rather than leaving old published sections behind. Retain cited versions according to the architecture. A future customer wiki connector can supply the same import boundary, but is not built here.
+The importer records reviewed catalogue metadata and Markdown bodies together. Changes need a successful re-import before the agent sees them. Publish each update atomically and retain cited versions; unknown IDs and unpublished content remain unavailable. The initial limits are 20 documents, 6,000 characters for the returned catalogue and 6,000 characters per document body. Reject oversize content instead of truncating it. A future customer wiki connector can supply this same import boundary, but is not built here.
 
 See [demo.md](../demo.md) for recording conversations and expected facts. Published prices here are optional service charges; room pricing remains outside the demo.

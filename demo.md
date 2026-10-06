@@ -11,7 +11,7 @@ All hotel facts, charges and availability are fictional. These are target behavi
 3. **“One child has a nut allergy and one adult is vegan. Can we have breakfast on our terrace?”**
    Retrieve dining evidence: vegan choices, rate-dependent inclusion, IDR 150,000 terrace delivery per villa per morning, previous-day request. Explain the kitchen handles nuts and staff must discuss allergies. Do not guarantee safety or claim staff were notified.
 
-Capture: three tool types, cited policy passages, grounded villa card, follow-up context and honest approval boundaries. Refresh to demonstrate saved conversation once implemented.
+Capture: four tools (list documents, read documents, villa details and availability), cited policy passages, grounded villa card, follow-up context and honest approval boundaries. Refresh to demonstrate saved conversation once implemented.
 
 ## More useful questions
 
@@ -34,4 +34,4 @@ A late-checkout request could be a separate write-tool feature: verify the guest
 
 ## Design explanation
 
-Policy answers use `search_policies` over published PostgreSQL sections. The agent chooses search terms and may refine them; it does not need to guess a Markdown filename. `get_villa` supplies public facts; `check_availability` computes every night's availability. Service opening hours never prove service slots are available.
+Policy answers use `list_documents` to inspect titles, summaries and keywords, then `read_document` for complete published bodies with versioned sources. Show the selected document IDs and reads. Multi-part questions may need several documents; summaries alone cannot support an answer. `get_villa` supplies public facts and `check_availability` computes every night. No keyword/full-text or vector search is used in this version. Service opening hours never prove service slots are available.

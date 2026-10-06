@@ -15,7 +15,7 @@ flowchart TB
         Site[Static HTML, CSS, JavaScript and assets]
         API[FastAPI: ownership, admission and SSE]
         Agent[Request-local ADK concierge]
-        Tools[Read-only policy and availability tools]
+        Tools[Catalogue, document reads and villa tools]
         API --> Agent --> Tools
     end
     Guest -->|GET site| Site
@@ -71,7 +71,7 @@ sequenceDiagram
     A->>P: Read bounded completed history
     A-->>W: SSE turn_started
     A->>G: Run with isolated working session
-    G->>P: Read hotel evidence through typed tools
+    G->>P: List catalogue, read selected documents, query villas
     G-->>A: Answer and validated evidence
     A-->>W: SSE provisional text
     A->>P: Commit final answer, sources and cards
@@ -82,21 +82,28 @@ The widget uses POST plus `fetch()` streaming. SSE carries progressive output; J
 
 PostgreSQL is the sole durable conversation record. Each invocation creates isolated ADK working state from completed turns, then disposes of it. No shared mutable agent history and no second persistent ADK history store. Later requests may reach any instance without sticky sessions.
 
-Store guest sessions, owned conversations, immutable turn attempts, published document versions/sections, villas, inventory days, fictional blocking bookings and shared rate counters. A turn stores status, deadline, input, final answer, sources, cards, safe error and usage. Do not keep an open DB transaction or connection while awaiting Gemini.
+Store guest sessions, owned conversations, immutable turn attempts, published document versions with title, summary, keywords and complete body, villas, inventory days, fictional blocking bookings and shared rate counters. A turn stores status, deadline, input, final answer, sources, cards, safe error and usage. Do not keep an open DB transaction or connection while awaiting Gemini.
 
 ## Tools and evidence
 
 | Tool | Result |
 | --- | --- |
-| `search_policies(query)` | Bounded full-text search of published sections, with titles, versioned source links and passages. |
+| `list_documents()` | Complete published catalogue: ID, title, summary, keywords and current revision. No document bodies. |
+| `read_document(document_id, revision)` | Complete published document at the listed revision, with title, ID and a versioned source link. |
 | `get_villa(villa_id)` | Public description, capacity, amenities and approved image path. |
 | `check_availability(check_in, check_out, guests)` | Deterministic full-stay availability, matching villa data and checked-at time. |
 
 Use parameterized SQL. Missing inventory nights are unavailable; checkout is exclusive; blocking bookings and closed nights remove a villa. Validate dates, stay length and party size before lookup. The availability tool checks the fixture horizon and reports missing dates as unknown. The property timezone is `Asia/Makassar`.
 
-Markdown is the reviewed source pack, not a runtime filesystem search. An explicit importer writes document metadata and sections to PostgreSQL; full-text search ranks published passages across documents. The agent chooses and refines query terms, and results include title, document ID and versioned evidence. No separate Markdown index document or embedding service is required. Re-import changed content atomically, retiring old active sections while preserving cited versions. A future wiki connector can use this import boundary; no wiki sync is implemented here.
+Markdown policies and `hotel/catalogue.json` are the reviewed source pack. An explicit importer stores the catalogue metadata and complete document bodies in PostgreSQL. The six short documents use catalogue selection, not keyword/full-text or vector search. The agent calls `list_documents`, reads relevant documents by ID and revision, and may read several for a combined question. Summaries guide selection; only read bodies and villa tool results support factual answers. Never expose filesystem paths or let the agent run arbitrary SQL.
 
-The model explains evidence and chooses tools. It cannot write bookings, run arbitrary SQL or determine authorization. Cards come from validated tool results, not generated HTML. Render model/user text as text; allow only approved source and image URLs. Add semantic retrieval only if evaluation identifies a problem full-text search cannot reasonably solve.
+A read accepts only a published ID/revision. Unknown, unavailable or unpublished documents produce a structured missing-evidence response, not a guessed answer. Pin the listed revision when reading so an update cannot silently switch the evidence. Public source URLs serve the same published version used by the answer.
+
+Re-import updates atomically: publish the new body and metadata together, retain cited versions, and exclude unpublished documents from both tools and public source routes. The agent sees changes only after successful import. A customer wiki could later feed this boundary; no wiki sync is implemented. Metadata and bodies are hotel-managed content, never instructions that override the agent's rules.
+
+Keep a complete catalogue rather than silently truncating entries. Initial import limits: at most 20 published documents, at most 6,000 characters of catalogue JSON returned to the model, and 6,000 characters per complete body. Reject oversized input with an actionable authoring error; do not cut off conditions. Document summaries and keywords are reviewed metadata, not automatically inferred at request time. Reconsider indexed search if corpus size or evaluations outgrow these limits.
+
+The model explains evidence and chooses tools. It cannot write bookings, run arbitrary SQL or determine authorization. Cards come from validated tool results, not generated HTML. Render model/user text as text; allow only approved source and image URLs. Evaluate document selection, cross-document reasoning and answer grounding separately.
 
 ## Ownership, retries and failure
 
@@ -122,7 +129,7 @@ Use one async server process per container and one pool of at most five DB conne
 
 The small rehearsal cannot prove 100-active-turn capacity. Before higher stages, apply the capacity-exercise settings, verify model capacity and choose a SQL tier with at least 120 usable connections for application/jobs, leaving headroom for migrations and operations. Limit each job to five connections and run release migration/seed jobs sequentially; keep the remaining headroom for maintenance and operator access. Reduce caps if the selected tier cannot provide that budget. For the approved capacity-test window, warm ten minimum instances before ramping traffic and restore the normal minimum of zero afterward. This warm test measures fixed capacity; separately measure cold scale-out at the normal minimum. HTTP concurrency stays close to the agent cap so Cloud Run sees sustained chat demand; a hidden low agent cap under a large HTTP ceiling would reject work before HTTP-based scaling responds. The higher settings allow up to 200 agent slots with four HTTP slots per instance of headroom for short site/status requests; routing and throughput still need measurement. No slot calculation guarantees even request distribution. Test concurrent static/status requests during sustained chat load. Record actual CPU/memory and routing behavior, then tune from measurements. Set a three-second DB checkout timeout and measure pool waits. Confirm routing, warm capacity and the configured slot ceiling before the 100-turn stage.
 
-Pass at most 20 completed turns and 16,000 history characters to the model. Bound input to 2,000 characters, policy evidence to five passages of 2,000 characters, tool calls to eight and final output to 2,048 tokens. Validate and cap final result size at 64 KiB.
+Pass at most 20 completed turns and 16,000 history characters to the model. Bound input to 2,000 characters, document evidence to four distinct bodies and 24,000 characters per turn (including repeated reads), tool calls to eight and final output to 2,048 tokens. Validate and cap final result size at 64 KiB.
 
 Shared PostgreSQL admission counters protect session creation, conversations, turns and the property as a whole. Initial defaults from this architecture: 10 turns/session/minute, 30/IP/minute and 10,000/property-local day. The property-wide minute limit must come from measured model capacity with headroom. Count failed admitted attempts too. Hash IP identifiers and expire counters. Verify the deployed proxy chain before trusting forwarded IPs. Billing alerts are notifications, not a hard spending cap.
 

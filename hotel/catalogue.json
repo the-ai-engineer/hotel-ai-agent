@@ -1,0 +1,101 @@
+[
+  {
+    "id": "stay-policy",
+    "title": "Arrival and departure",
+    "file": "policies/stay.md",
+    "summary": "Check-in and checkout, early arrival facilities, airport transfers, luggage storage and departure access.",
+    "keywords": [
+      "arrival",
+      "airport",
+      "transfer",
+      "early check-in",
+      "late checkout",
+      "luggage",
+      "bags",
+      "departure",
+      "accessibility"
+    ]
+  },
+  {
+    "id": "dining-policy",
+    "title": "Breakfast and dining",
+    "file": "policies/dining.md",
+    "summary": "Breakfast inclusion and hours, terrace delivery charges, vegan meals, allergies and private dining.",
+    "keywords": [
+      "breakfast",
+      "terrace",
+      "delivery",
+      "vegan",
+      "vegetarian",
+      "allergy",
+      "nuts",
+      "restaurant",
+      "dinner"
+    ]
+  },
+  {
+    "id": "family-policy",
+    "title": "Family stays",
+    "file": "policies/family.md",
+    "summary": "Villa capacity and beds, cots, child ages, pool safety and children’s facilities.",
+    "keywords": [
+      "family",
+      "children",
+      "kids",
+      "capacity",
+      "beds",
+      "cot",
+      "infant",
+      "pool safety",
+      "babysitting"
+    ]
+  },
+  {
+    "id": "experiences-policy",
+    "title": "Activities and celebrations",
+    "file": "policies/experiences.md",
+    "summary": "Regular yoga and village walks, age rules, anniversary options, charges and request deadlines.",
+    "keywords": [
+      "activities",
+      "yoga",
+      "walk",
+      "schedule",
+      "anniversary",
+      "flowers",
+      "cake",
+      "celebration"
+    ]
+  },
+  {
+    "id": "cancellation-policy",
+    "title": "Cancellation terms",
+    "file": "policies/cancellation.md",
+    "summary": "Flexible and non-refundable cancellation terms, deadlines, no-shows and charge examples.",
+    "keywords": [
+      "cancel",
+      "cancellation",
+      "refund",
+      "flexible",
+      "non-refundable",
+      "deadline",
+      "no-show",
+      "change dates"
+    ]
+  },
+  {
+    "id": "services-policy",
+    "title": "Guest services",
+    "file": "policies/services.md",
+    "summary": "Wi-Fi, shared and private pool rules, spa hours, treatment charges and staff confirmation limits.",
+    "keywords": [
+      "wifi",
+      "internet",
+      "pool",
+      "spa",
+      "massage",
+      "reception",
+      "staff",
+      "booking request"
+    ]
+  }
+]
