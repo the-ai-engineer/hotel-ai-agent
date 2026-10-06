@@ -1,0 +1,30 @@
+[
+  {
+    "id": "forest-suite",
+    "name": "Forest Suite",
+    "capacity": 2,
+    "bedrooms": 1,
+    "private_pool": true,
+    "image": "assets/suite.png",
+    "description": "A one-bedroom villa with a private pool and covered terrace overlooking the forest.",
+    "amenities": [
+      "Private pool",
+      "Covered terrace",
+      "Wi-Fi"
+    ]
+  },
+  {
+    "id": "garden-villa",
+    "name": "Garden Villa",
+    "capacity": 4,
+    "bedrooms": 2,
+    "private_pool": true,
+    "image": "assets/bedroom-daylight.png",
+    "description": "A two-bedroom villa for up to four guests, with a private pool and garden terrace.",
+    "amenities": [
+      "Private pool",
+      "Garden terrace",
+      "Wi-Fi"
+    ]
+  }
+]

@@ -1,10 +1,10 @@
 # Sanctuary Hotel: architecture
 
-Canonical build direction, 6 October 2026. Read [Requirements](Requirements.md) first. [Linear](https://linear.app/gradientwork/project/hotel-website-agent-4f0f8e301934/overview) owns the build plan. The [detailed implementation design](hotel-agent/design.md) supplies API contracts and test cases; this document takes precedence for project and current delivery choices.
+Canonical build direction, 6 October 2026. Read [Requirements](Requirements.md) first. [Linear](https://linear.app/gradientwork/project/hotel-website-agent-4f0f8e301934/overview) owns the build plan. The source pack in `hotel/` defines fictional evidence; `evals/` defines expected guest behavior.
 
 ## Current state
 
-Main contains the saved website with simulated concierge replies. Policy chat and villa availability have implementations in open PRs #9 and #10. Conversation recovery changes are unfinished in the original local checkout. None of that is evidence of a deployed, load-tested service. Reuse and review these changes rather than rebuild them blindly.
+This recording baseline contains only the static website and disabled chat preview. The backend, database and deployment are to be built. Earlier implementations and detailed documents are preserved on `codex/agent-build-backup-20261006`.
 
 ## Runtime diagram
 
@@ -41,11 +41,12 @@ backend/
   app/                    settings, DB, sessions, turns, agent, tools and hotel queries
     routes/               chat, public sources and health endpoints
   migrations/             explicit Alembic revisions
-  seeds/                  fictional hotel data
+  seeds/                  importer for hotel/ source files; no duplicate content
   tests/                  agent contracts and real PostgreSQL integration tests
   pyproject.toml
   uv.lock
 infra/                    repeatable provisioning, release and maintenance commands
+hotel/                    reviewed fictional policies, villas and nightly inventory
 evals/                    fixed guest questions and expected facts
 scripts/                  local run and verification commands
 docs/                     requirements and architecture
@@ -54,7 +55,7 @@ compose.yaml              local PostgreSQL
 Dockerfile                one image containing frontend and backend
 ```
 
-This is the target layout. Main still uses `code/website/`. Move it once, preserving assets and updating preview/check commands together. Use plain browser JavaScript and Python async I/O. Routes call focused application modules; tools delegate to hotel queries. Keep ADK types inside the agent adapter. Avoid generic repositories, provider factories and agent teams.
+This is the target layout. The backend, infrastructure, Dockerfile and Compose configuration do not exist yet; add them as their slices are built. Use plain browser JavaScript and Python async I/O. Routes call focused application modules; tools delegate to hotel queries. Keep ADK types inside the agent adapter. Avoid generic repositories, provider factories and agent teams.
 
 ## Guest turn and durable state
 
@@ -91,7 +92,7 @@ Store guest sessions, owned conversations, immutable turn attempts, published do
 | `get_villa(villa_id)` | Public description, capacity, amenities and approved image path. |
 | `check_availability(check_in, check_out, guests)` | Deterministic full-stay availability, matching villa data and checked-at time. |
 
-Use parameterized SQL. Missing inventory nights are unavailable; checkout is exclusive; blocking bookings and closed nights remove a villa. Validate dates, horizon, stay length and party size before lookup. The property timezone is `Asia/Makassar`.
+Use parameterized SQL. Missing inventory nights are unavailable; checkout is exclusive; blocking bookings and closed nights remove a villa. Validate dates, stay length and party size before lookup. The availability tool checks the fixture horizon and reports missing dates as unknown. The property timezone is `Asia/Makassar`.
 
 The model explains evidence and chooses tools. It cannot write bookings, run arbitrary SQL or determine authorization. Cards come from validated tool results, not generated HTML. Render model/user text as text; allow only approved source and image URLs. Add semantic retrieval only if evaluation identifies a problem full-text search cannot reasonably solve.
 
@@ -121,7 +122,7 @@ The small rehearsal cannot prove 100-active-turn capacity. Before higher stages,
 
 Pass at most 20 completed turns and 16,000 history characters to the model. Bound input to 2,000 characters, policy evidence to five passages of 2,000 characters, tool calls to eight and final output to 2,048 tokens. Validate and cap final result size at 64 KiB.
 
-Shared PostgreSQL admission counters protect session creation, conversations, turns and the property as a whole. Initial defaults from the detailed design: 10 turns/session/minute, 30/IP/minute and 10,000/property-local day. The property-wide minute limit must come from measured model capacity with headroom. Count failed admitted attempts too. Hash IP identifiers and expire counters. Verify the deployed proxy chain before trusting forwarded IPs. Billing alerts are notifications, not a hard spending cap.
+Shared PostgreSQL admission counters protect session creation, conversations, turns and the property as a whole. Initial defaults from this architecture: 10 turns/session/minute, 30/IP/minute and 10,000/property-local day. The property-wide minute limit must come from measured model capacity with headroom. Count failed admitted attempts too. Hash IP identifiers and expire counters. Verify the deployed proxy chain before trusting forwarded IPs. Billing alerts are notifications, not a hard spending cap.
 
 ## Retention and operations
 
@@ -153,11 +154,8 @@ Release: checks and evals, immutable image, explicit migration job, explicit dem
 
 Each Linear slice ends with a guest-visible result and recorded verification. Credential-free tests exercise the actual ADK boundary with deterministic responses and real local PostgreSQL; they cannot prove model access. A live local journey proves the selected model and tools. Deployed smoke/failure drills prove cloud behavior. The paid staged capacity exercise proves the supported load.
 
-The retained [detailed design](hotel-agent/design.md) defines stricter contracts and checks. Its initial 80-concurrency/10-instance proposal is not the rehearsal default above. Preserve its capacity acceptance criteria while tuning infrastructure from measurements.
-
 ## References
 
 - [Agents CLI](https://github.com/google/agents-cli): setup, existing-project enhancement, evaluation and deployment capabilities.
 - [Cloud Run concurrency](https://docs.cloud.google.com/run/docs/about-concurrency): instance request settings and scaling.
 - [Cloud Run request timeout](https://docs.cloud.google.com/run/docs/configuring/request-timeout): platform timeout behavior.
-- [Historical architecture proposal](hotel-agent/architecture-original.md): retained for earlier INV/AC references, not the current build direction.
