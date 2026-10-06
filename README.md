@@ -56,7 +56,9 @@ PostgreSQL. They prove app behavior, not Vertex AI access or cloud capacity.
 
 - [Architecture diagram (PNG)](./docs/diagrams/architecture.png)
 - [Implementation design for the remaining app](./docs/hotel-agent/design.md)
-- [Earlier architecture proposal](./docs/architecture.md)
+- [Requirements](./docs/Requirements.md)
+- [Architecture](./docs/Architecture.md)
+- [Build plan in Linear](https://linear.app/gradientwork/project/hotel-website-agent-4f0f8e301934/overview)
 
 - [Scripted opening, architecture, and 30-minute outline](./LESSON.md)
 - [Saved hotel website and preview instructions](./code/README.md)
