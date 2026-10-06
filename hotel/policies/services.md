@@ -1,6 +1,6 @@
 # Guest services
 
-Document ID: services-policy | Revision: 2 | Status: published
+Document ID: services-policy | Revision: 3 | Status: published
 
 ## Wi-Fi and pools
 
@@ -12,4 +12,4 @@ The spa opens daily from 09:00 to 20:00 for guests aged 16 and over. A 60-minute
 
 ## Staff confirmation
 
-Reception is staffed 24 hours. Services needing confirmation remain requests, not reservations. No contact destination or staffed chat is configured in this demo. Explain that limitation; do not invent a phone number, email address, booking link or claim that a request was sent.
+Reception is staffed 24 hours. Services needing confirmation remain requests, not reservations. A guest with a session-owned demo booking may review and send a note for hotel review. The application records it as pending review only after the guest clicks Send request. This does not approve the service or notify staff by email. No staffed live chat, phone number or email address is configured.

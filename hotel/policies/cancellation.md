@@ -1,6 +1,6 @@
 # Cancellation terms
 
-Document ID: cancellation-policy | Revision: 1 | Status: published
+Document ID: cancellation-policy | Revision: 2 | Status: published
 
 ## Flexible rate
 
@@ -10,8 +10,8 @@ For arrival on 1 November 2026, the free-cancellation deadline is 23:59 on 25 Oc
 
 ## Non-refundable rate
 
-Non-refundable accommodation is charged in full if cancelled or for a no-show. The concierge must ask which rate applies; it cannot infer the rate from the villa type or inspect a guest reservation.
+Non-refundable accommodation is charged in full if cancelled or for a no-show. The concierge must ask which rate applies; it cannot infer the rate from the villa type or infer a rate from a demo reservation, which has no paid rate.
 
 ## Limits
 
-Ask the rate, check-in date and proposed cancellation date when needed. Explain the applicable charge basis, but never invent a monetary cancellation fee: nightly accommodation prices and individual reservations are not available to this agent. The concierge cannot cancel, modify or refund bookings. Changing arrival dates requires staff review and may affect rates and availability.
+Ask the rate, check-in date and proposed cancellation date when needed. Explain the applicable charge basis, but never invent a monetary cancellation fee: nightly accommodation prices are not available. Session-owned demo reservations may be looked up, but they contain no rate or paid price. The concierge cannot cancel, modify or refund bookings. Changing arrival dates requires staff review and may affect rates and availability.

@@ -26,10 +26,12 @@ const context = vm.createContext({
   },
   fetch: (path) => new Promise((resolve) => pending.push({ path, resolve })),
   AbortController, TextDecoder, crypto: webcrypto,
+  ensureGuestSession: () => new Promise(resolve => pending.push({ path: '/api/session', resolve })),
+  forgetGuestSession() {},
   renderReply: (node, text) => { node.textContent = text; },
   streamReply: (node) => ({ update(text) { node.textContent = text; }, finish(text) { node.textContent = text; }, cancel() {} }),
 });
-vm.runInContext(readFileSync('frontend/js/chat.js', 'utf8').replace(/^import .*;\n/, ''), context);
+vm.runInContext(readFileSync('frontend/js/chat.js', 'utf8').replace(/^import .*;\n/gm, ''), context);
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
 (async () => {

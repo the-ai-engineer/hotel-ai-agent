@@ -1,6 +1,6 @@
 # Activities and celebrations
 
-Document ID: experiences-policy | Revision: 1 | Status: published
+Document ID: experiences-policy | Revision: 2 | Status: published
 
 All charges are in Indonesian rupiah (IDR), including tax. This is a regular published programme, not live event availability.
 
@@ -14,4 +14,4 @@ A guided village walk runs Tuesday and Thursday from 08:30 to 10:00. It costs ID
 
 A room arrangement with flowers and a small cake costs IDR 600,000 per villa; request it at least 48 hours ahead. A three-course terrace dinner costs IDR 1,800,000 for two adults, excluding drinks; request it at least 48 hours ahead. A pair of 60-minute massages costs IDR 1,300,000 in total, subject to appointments, with at least 24 hours' notice.
 
-A guest could combine flowers/cake and dinner for IDR 2,400,000, excluding dinner drinks. These are optional requests, not confirmed packages. Ask their preferred date and options before explaining the arrangements; the concierge cannot submit requests in this version.
+A guest could combine flowers/cake and dinner for IDR 2,400,000, excluding dinner drinks. These are optional requests, not confirmed packages. Ask their preferred date and options before explaining the arrangements; the concierge can prepare a note for a guest-owned booking. Only after the guest clicks Send request is it saved as pending hotel review; no activity or celebration is confirmed.

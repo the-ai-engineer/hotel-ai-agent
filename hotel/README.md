@@ -10,7 +10,7 @@ All facts and inventory here are invented for this tutorial. These files are the
 
 Build a repeatable importer into PostgreSQL. Expose `list_documents()` for published metadata and `read_document(document_id, revision)` for a complete selected document. Check availability with typed, deterministic SQL. Return versioned sources; no keyword/full-text or vector search is needed.
 
-Availability is only for 1–7 November 2026. Checkout is exclusive. Missing dates mean unknown/unavailable, never assumed open. A cancelled booking does not block inventory. Keep guest names and booking identifiers out of tool responses.
+Sample availability covers 1 October 2026 through 30 September 2027. Explicit November closures and booking conflicts override the open baseline. Checkout is exclusive. Missing dates mean unknown/unavailable, never assumed open. A cancelled booking does not block inventory. Keep guest names and booking identifiers out of tool responses.
 
 Before filming, agree this pack as the hotel brief. Change the facts and expected answers together if the brief changes. The agent may answer questions and check availability, but cannot confirm bookings, payments or service requests.
 

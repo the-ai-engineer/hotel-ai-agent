@@ -1,6 +1,6 @@
 # Hotel concierge demo
 
-All hotel facts, charges and availability are fictional. Availability, policy answers, source links, villa detail pages and saved conversations are implemented locally. Request submission and booking changes are not implemented. Prices below are IDR including tax; accommodation prices are not provided.
+All hotel facts, charges and availability are fictional. Availability, policy answers, source links, villa detail pages and saved conversations are implemented locally. Guest-confirmed demo reservations and notes saved for hotel review are implemented. Booking changes, payments and staff notifications are not implemented. Prices below are IDR including tax; accommodation prices are not provided.
 
 ## Opening: one family conversation
 
@@ -11,7 +11,7 @@ All hotel facts, charges and availability are fictional. Availability, policy an
 3. **“One child has a nut allergy and one adult is vegan. Can we have breakfast on our terrace?”**
    Retrieve dining evidence: vegan choices, rate-dependent inclusion, IDR 150,000 terrace delivery per villa per morning, previous-day request. Explain the kitchen handles nuts and staff must discuss allergies. Do not guarantee safety or claim staff were notified.
 
-Capture: four tools (list documents, read documents, villa details and availability), cited policy passages, grounded villa card, follow-up context and honest approval boundaries. Refresh to demonstrate saved conversation once implemented.
+Capture: four tools (list documents, read documents, villa details and availability), cited policy passages, grounded villa card, follow-up context and honest approval boundaries. Refresh to demonstrate the saved conversation.
 
 ## More useful questions
 
@@ -27,10 +27,6 @@ Capture: four tools (list documents, read documents, villa details and availabil
 ## Short evaluation segment
 
 Show the cases in `evals/guest-questions.json`. Check facts and availability deterministically; evaluate the answer for grounding and clarity. Include a family follow-up, unknown inventory, allergy boundary and failed lookup. Show an actual failing case if one occurs, fix it and rerun.
-
-## Optional later action
-
-A late-checkout request could be a separate write-tool feature: verify the guest/booking, collect requested time, show a summary, ask confirmation, create an idempotent request and display “Pending hotel approval”. This is outside the current read-only scope. Do not film it as implemented or imply a reservation changed.
 
 ## Design explanation
 
@@ -55,9 +51,19 @@ The demo shows changing requirements, deterministic inventory, a visual recommen
 
 - **Family:** “Two adults and two children, three nights from 1 November 2026. Which villa suits us?” Then ask about a nut allergy, vegan breakfast and terrace delivery. Show capacity, bedding and qualified dietary guidance.
 - **Multilingual:** Ask an arrival question in Spanish. The current agent instructions support the guest’s language; verify the actual response before filming.
-- **Unknown dates:** Ask about December. Show a clear distinction between unrecorded inventory and sold-out accommodation.
+- **Unknown dates:** Ask about December 2027. Show a clear distinction between unrecorded inventory and sold-out accommodation.
 - **Operational proof:** Refresh the villa page and continue the conversation. Stop a response and retry. Pair this with a short look at the tools and database records.
 
-## Best next product feature, not implemented
+## Hotel request workflow
 
-A guest confirms a late-checkout or anniversary request. The agent stores a structured, idempotent request and returns a reference with **Pending hotel approval**. A small staff inbox shows it for approval or follow-up. Do not claim a booking was changed. This needs explicit guest confirmation and a way for staff to contact the guest or identify their booking. It is a separate write-tool slice, not an extra FAQ.
+The agent looks up the current guest's booking and prepares a note. The guest reviews it and clicks **Send request**. PostgreSQL saves it as pending hotel review. No booking is changed, and no external message is sent. A staff inbox and notifications remain future scope.
+
+## Full booking demo
+
+1. “Can I book the Garden Villa for two guests, 10 to 11 October 2026?” Show availability and Reserve this villa. If this stay is already booked during rehearsal, choose another unblocked October date.
+2. Open the booking page, review the exact dates/guests, then Confirm reservation. Show the generated reference. No payment or nightly price is claimed.
+3. Click Ask about my booking. The concierge reads only the current guest's reservation.
+4. “Please ask the hotel to review late checkout until 14:00.” It reads the policy, explains IDR 500,000 and approval/deadline conditions, then prepares a note. Review and click Send request. Show Pending hotel review, not approved checkout.
+5. Refresh: the reservation stays confirmed, and the note status stays pending. Repeat the availability search: the reserved villa is excluded.
+
+Today's property date is injected into the prompt. October 2026 through September 2027 are covered by sample inventory. Booking references alone cannot access other guests' records. The sample browser session lasts 24 hours. Real returning guests need authentication.

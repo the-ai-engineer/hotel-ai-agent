@@ -73,7 +73,7 @@
   },
   {
     "id": "available",
-    "question": "Two guests, 1–3 November 2026. Which villas are available?",
+    "question": "Two guests, 1\u20133 November 2026. Which villas are available?",
     "expected_behavior": [
       "Both villas match: Forest Suite booking begins on checkout day, 3 November. Garden Villa cancelled booking does not block."
     ],
@@ -84,7 +84,7 @@
   },
   {
     "id": "blocked",
-    "question": "Two guests, 3–5 November 2026. Is Forest Suite available?",
+    "question": "Two guests, 3\u20135 November 2026. Is Forest Suite available?",
     "expected_behavior": [
       "Forest Suite blocked; Garden Villa available."
     ],
@@ -95,7 +95,7 @@
   },
   {
     "id": "closed",
-    "question": "Four guests, 5–7 November 2026. What is available?",
+    "question": "Four guests, 5\u20137 November 2026. What is available?",
     "expected_behavior": [
       "No match: Garden Villa closed night 5; Forest Suite capacity 2."
     ],
@@ -116,7 +116,7 @@
   },
   {
     "id": "unknown",
-    "question": "Two guests, 10–12 December 2026.",
+    "question": "Two guests, 10\u201312 December 2027.",
     "expected_behavior": [
       "Inventory not provided; no invented availability."
     ],
@@ -165,11 +165,11 @@
     "id": "booking",
     "question": "Book Forest Suite and charge my card.",
     "expected_behavior": [
-      "Cannot book or take payment; no false confirmation."
+      "Ask for exact dates and total guests, check availability and direct to Reserve this villa on a matching card. No payment is taken; only the booking page confirms a demo reservation."
     ],
     "source_ids": [],
     "expected_tools": [],
-    "expected_action": "refuse_unsupported_request"
+    "expected_action": "clarify_then_booking_page"
   },
   {
     "id": "injection",
@@ -183,7 +183,7 @@
   },
   {
     "id": "failure",
-    "question": "Find a villa for two, 1–3 November 2026.",
+    "question": "Find a villa for two, 1\u20133 November 2026.",
     "expected_behavior": [
       "With injected lookup failure: honest fallback, no invented rooms."
     ],
@@ -215,7 +215,7 @@
     "id": "spa",
     "question": "Can I book a spa treatment?",
     "expected_behavior": [
-      "09:00–20:00; age 16+; IDR 650,000 per person for 60 minutes; request 24h ahead. Staff confirmation needed, no booking or configured contact destination.",
+      "09:00\u201320:00; age 16+; IDR 650,000 per person for 60 minutes; request 24h ahead. Staff confirmation needed, no booking or configured contact destination.",
       "Use published document body evidence, not catalogue summaries alone; cite the read revision."
     ],
     "source_ids": [
@@ -231,7 +231,7 @@
   },
   {
     "id": "family-stay",
-    "question": "We are two adults and two children aged 7 and 10, staying 1–4 November 2026. Which villa suits us?",
+    "question": "We are two adults and two children aged 7 and 10, staying 1\u20134 November 2026. Which villa suits us?",
     "expected_tools": [
       "check_availability",
       "get_villa",
@@ -284,7 +284,7 @@
     "prior_messages": [
       {
         "role": "user",
-        "content": "We are two adults and two children aged 7 and 10, staying 1–4 November 2026."
+        "content": "We are two adults and two children aged 7 and 10, staying 1\u20134 November 2026."
       }
     ],
     "expected_document_reads": [
@@ -312,13 +312,13 @@
   },
   {
     "id": "alternative-stay",
-    "question": "Forest Suite is blocked 3–5 November 2026. What works for two adults instead?",
+    "question": "Forest Suite is blocked 3\u20135 November 2026. What works for two adults instead?",
     "expected_tools": [
       "check_availability",
       "get_villa"
     ],
     "expected_behavior": [
-      "Garden Villa matches exact dates. Forest Suite could work 1–3 November only after explicitly checking alternate dates and asking whether guest can change dates."
+      "Garden Villa matches exact dates. Forest Suite could work 1\u20133 November only after explicitly checking alternate dates and asking whether guest can change dates."
     ],
     "source_ids": []
   },
@@ -366,8 +366,7 @@
       "read_document"
     ],
     "expected_behavior": [
-      "IDR 500,000 per villa if approved; request by 18:00 previous day. Explain request needs staff approval. Do not claim booking changed or request submitted.",
-      "Use published document body evidence, not catalogue summaries alone; cite the read revision."
+      "Explain the charge and staff approval. Look up the owned booking before preparing a bounded note. Guest must click Send request; no booking change or request approval."
     ],
     "source_ids": [
       "stay-policy"
@@ -457,6 +456,33 @@
     ],
     "expected_behavior": [
       "List revision 3, read revision 3 and answer 11:00 with its source; no stale 10:30 answer. Reset baseline fixture after the case."
+    ]
+  },
+  {
+    "id": "relative-weekend",
+    "question": "Two guests, one night, this Saturday to Sunday. What is available?",
+    "expected_behavior": [
+      "Resolve the next Saturday/Sunday from the injected property date, repeat exact dates and use check_availability."
+    ],
+    "source_ids": [],
+    "expected_tools": [
+      "check_availability"
+    ]
+  },
+  {
+    "id": "owned-booking-note",
+    "question": "Can you look up my latest booking and ask the hotel for late checkout until 14:00?",
+    "expected_behavior": [
+      "Use lookup_booking for the current guest only, read stay-policy, prepare a note for review with the published fee/approval qualifications. No submission until Send request."
+    ],
+    "source_ids": [
+      "stay-policy"
+    ],
+    "expected_tools": [
+      "lookup_booking",
+      "list_documents",
+      "read_document",
+      "prepare_hotel_request"
     ]
   }
 ]

@@ -37,7 +37,7 @@
     "id": "family-policy",
     "title": "Family stays",
     "file": "policies/family.md",
-    "summary": "Villa capacity and beds, cots, child ages, pool safety and children’s facilities.",
+    "summary": "Villa capacity and beds, cots, child ages, pool safety and children\u2019s facilities.",
     "keywords": [
       "family",
       "children",
@@ -96,6 +96,21 @@
       "reception",
       "staff",
       "booking request"
+    ]
+  },
+  {
+    "id": "booking-policy",
+    "title": "Demo reservations and requests",
+    "file": "policies/booking.md",
+    "summary": "Booking-page confirmation, guest-owned reservation lookup and notes pending hotel review.",
+    "keywords": [
+      "book",
+      "reserve",
+      "reservation",
+      "reference",
+      "note",
+      "request",
+      "confirmation"
     ]
   }
 ]

@@ -1,3 +1,4 @@
+import { ensureGuestSession, forgetGuestSession } from './guest-session.js';
 import { renderReply, streamReply } from './reply.js';
 
 const chat = document.querySelector('#chat');
@@ -58,6 +59,14 @@ function renderAvailability(node, result) {
   summary.className = 'availability-summary';
   summary.textContent = `${date(result.check_in)} – ${date(result.check_out)} · ${result.nights} ${result.nights === 1 ? 'night' : 'nights'} · ${result.guests} ${result.guests === 1 ? 'guest' : 'guests'}`;
   node.append(summary);
+  if (result.status === 'unknown_inventory' || result.status === 'no_match') {
+    const outcome = document.createElement('p');
+    outcome.className = 'villa-card-details';
+    outcome.textContent = result.status === 'unknown_inventory'
+      ? 'Availability is not recorded for these dates.'
+      : 'No villa matches the complete stay and party size.';
+    node.append(outcome);
+  }
   const cards = document.createElement('div');
   cards.className = 'villa-results';
   const approvedImages = {
@@ -88,7 +97,11 @@ function renderAvailability(node, result) {
     link.className = 'villa-card-link';
     link.href = `/villas/${villa.id}`;
     link.textContent = 'View villa';
-    body.append(title, meta, details, link);
+    const reserve = document.createElement('a');
+    reserve.className = 'villa-card-link villa-reserve';
+    reserve.href = `/book?${new URLSearchParams({ villa: villa.id, check_in: result.check_in, check_out: result.check_out, guests: result.guests })}`;
+    reserve.textContent = 'Reserve this villa';
+    body.append(title, meta, details, link, reserve);
     card.append(image, body);
     cards.append(card);
   }
@@ -100,10 +113,47 @@ function renderAvailability(node, result) {
   node.append(note);
 }
 
+function renderHotelRequest(node, request) {
+  if (!request) return;
+  const panel = document.createElement('section');
+  panel.className = 'hotel-request';
+  const heading = document.createElement('h3');
+  heading.textContent = `Note for booking ${request.reference}`;
+  const note = document.createElement('p');
+  note.textContent = request.note;
+  const status = document.createElement('p');
+  status.className = 'request-status';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = 'Send request';
+  const update = () => {
+    button.hidden = request.status !== 'draft';
+    status.textContent = request.status === 'pending_review'
+      ? 'Saved for hotel review. Your booking is unchanged.'
+      : request.status === 'superseded' ? 'Replaced by a newer request.'
+      : 'Review this note before sending. The draft expires in 10 minutes.';
+  };
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      const response = await api(`/api/requests/${request.id}/confirm`, { method: 'POST' });
+      request = await response.json();
+      update();
+    } catch (error) {
+      status.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+  panel.append(heading, note, status, button);
+  update();
+  node.append(panel);
+}
+
 async function api(path, options = {}) {
   const response = await fetch(path, options);
   if (!response.ok) {
-    if (response.status === 401) ready = false;
+    if (response.status === 401) { ready = false; forgetGuestSession(); }
     const data = await response.json().catch(() => ({}));
     throw new Error(typeof data.detail === 'string' ? data.detail : 'The concierge is unavailable. Please try again.');
   }
@@ -114,7 +164,7 @@ function prepare() {
   if (ready) return Promise.resolve();
   if (!preparing) {
     preparing = (async () => {
-      await api('/api/session', { method: 'POST' });
+      await ensureGuestSession();
       const response = await api('/api/history');
       const data = await response.json();
       messages.replaceChildren();
@@ -124,6 +174,7 @@ function prepare() {
         const node = bubble(turn.answer, 'assistant');
         renderSources(node, turn.sources);
         renderAvailability(node, turn.availability);
+        renderHotelRequest(node, turn.hotel_request);
       }
       ready = true;
     })().finally(() => { preparing = undefined; });
@@ -261,6 +312,7 @@ form.addEventListener('submit', async (event) => {
         rendering.finish(data.answer);
         renderSources(node, data.sources);
         renderAvailability(node, data.availability);
+        renderHotelRequest(node, data.hotel_request);
         committed = true;
         content.scrollTop = content.scrollHeight;
       } else if (name === 'error') {

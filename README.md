@@ -7,7 +7,9 @@ a fictional luxury forest retreat.
 Gemini 3.8 Flash on Vertex AI. Policies and completed conversations live in
 PostgreSQL. Read-only villa availability returns photo cards. Guests can start a
 new conversation without carrying old context forward. Villa cards open dedicated
-Forest Suite and Garden Villa pages with the same saved conversation. Stronger turn recovery, production limits and
+Forest Suite and Garden Villa pages with the same saved conversation. Reserve buttons
+open a review-and-confirm booking page. The concierge can look up owned demo
+reservations and prepare notes for explicit guest confirmation. Stronger turn recovery, production limits and
 cloud deployment are later Linear slices. This branch is a local development demo.
 
 ## Run the agent locally

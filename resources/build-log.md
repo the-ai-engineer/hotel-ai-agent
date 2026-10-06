@@ -84,3 +84,21 @@ Added `/villas/forest-suite` and `/villas/garden-villa`, sharing one static deta
 Checks: backend route/facts/404 regression, ruff, frontend syntax, Markdown and initialization regressions, website dependencies and desktop/mobile browser navigation.
 
 Verified 29 backend tests and frontend checks. Browser: both villa detail pages, homepage details action, preserved conversation and availability prompt passed. Claude and independent review approved; the showcase action retains its original arrow.
+
+## Guest-confirmed demo bookings
+
+Availability cards now open `/book` with the villa, dates and guests prefilled. Review is read-only; Confirm reservation creates an owned, idempotent fictional booking and rechecks availability under a villa lock. Reload recovers the confirmation. Chat and booking share one guest-session initialization.
+
+Verified commands:
+
+```bash
+uv run --directory backend python -m app.db migrate
+uv run --directory backend python -m app.db seed
+npm test --prefix frontend
+uv run --directory backend ruff check app tests
+uv run --directory backend pytest -q
+```
+
+35 backend tests passed, including overlapping reservation concurrency, retry safety, ownership, request expiry and failure rollback. Frontend tests cover shared session initialization, booking review, failed confirmation retry and reload recovery. Claude review caught a clock fixture bypass; fixed by calling `property_today()`. Independent review caught a fresh-browser cookie race; fixed by a shared session promise. Final targeted review approved.
+
+Live Vertex/browser proof: October availability, prefilled booking page, confirmed reference, owned booking lookup and explicit late-checkout note submission. Notes remain pending hotel review and never change the reservation. No payment, staff notification or Cloud Run deployment was performed.

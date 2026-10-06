@@ -12,12 +12,21 @@ from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from app import reservations
 from app.agent import answer
 from app.db import connect, token_hash
-from app.inventory import get_villa
+from app.inventory import check_availability, get_villa
 from app.settings import Settings
 
 log = logging.getLogger("hotel")
+
+
+class ReservationInput(BaseModel):
+    request_id: UUID
+    villa_id: str = Field(pattern=r"^[a-z0-9-]+$", max_length=80)
+    check_in: str = Field(max_length=10)
+    check_out: str = Field(max_length=10)
+    guests: int = Field(ge=1, le=8, strict=True)
 
 
 class Question(BaseModel):
@@ -118,8 +127,10 @@ def create_app(settings=None):
         key = await owner(request)
         async with app.state.pool.acquire(timeout=3) as conn:
             rows = await conn.fetch(
-                """SELECT question,answer,sources,availability FROM (
-                SELECT question,answer,sources,availability,created_at FROM turns
+                """SELECT question,answer,sources,availability,
+                (SELECT json_build_object('id',r.id,'reference',b.reference,'note',r.note,'status',r.status)
+                FROM hotel_requests r JOIN bookings b ON b.id=r.booking_id WHERE r.id=recent.request_id) AS hotel_request FROM (
+                SELECT question,answer,sources,availability,request_id,created_at FROM turns
                 WHERE session_hash=$1 AND conversation_id=(SELECT conversation_id FROM guest_sessions WHERE token_hash=$1) AND status='completed' ORDER BY created_at DESC LIMIT 20
             ) recent ORDER BY created_at""",
                 key,
@@ -130,6 +141,9 @@ def create_app(settings=None):
                 {
                     **dict(row),
                     "sources": json.loads(row["sources"]),
+                    "hotel_request": json.loads(row["hotel_request"])
+                    if row["hotel_request"]
+                    else None,
                     "availability": json.loads(row["availability"])
                     if row["availability"]
                     else None,
@@ -222,7 +236,11 @@ def create_app(settings=None):
                 async with asyncio.timeout_at(deadline):
                     final = None
                     async for item in app.state.answer(
-                        app.state.pool, settings, context, question.message
+                        app.state.pool,
+                        settings,
+                        context,
+                        question.message,
+                        guest={"session_hash": key, "conversation_id": str(acquired)},
                     ):
                         if item["type"] == "text":
                             yield event("text", {"text": item["text"]})
@@ -241,12 +259,19 @@ def create_app(settings=None):
                         )
                         if not valid:
                             raise RuntimeError("Turn expired")
+                        if final.get("hotel_request"):
+                            await reservations.save_request(
+                                conn, key, acquired, final["hotel_request"]
+                            )
                         await conn.execute(
-                            "UPDATE turns SET answer=$2,sources=$3::jsonb,availability=$4::jsonb,status='completed' WHERE id=$1 AND status='running'",
+                            "UPDATE turns SET answer=$2,sources=$3::jsonb,availability=$4::jsonb,request_id=$5,status='completed' WHERE id=$1 AND status='running'",
                             question.turn_id,
                             final["answer"],
                             json.dumps(final["sources"]),
                             json.dumps(final.get("availability")),
+                            UUID(final["hotel_request"]["id"])
+                            if final.get("hotel_request")
+                            else None,
                         )
                         await conn.execute(
                             "UPDATE guest_sessions SET active_turn=NULL,busy_until=NULL WHERE token_hash=$1 AND active_turn=$2",
@@ -290,6 +315,47 @@ def create_app(settings=None):
             media_type="text/event-stream",
             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
         )
+
+    @app.post("/api/bookings")
+    async def create_booking(
+        request: Request, details: ReservationInput, response: Response
+    ):
+        check_origin(request)
+        key = await owner(request)
+        try:
+            booking = await reservations.reserve(
+                app.state.pool, key, **details.model_dump()
+            )
+        except reservations.ReservationError as exc:
+            raise HTTPException(409, str(exc)) from None
+        response.headers["Cache-Control"] = "no-store"
+        return {"booking": booking}
+
+    @app.get("/api/bookings/{reference}")
+    async def get_booking(reference: str, request: Request, response: Response):
+        key = await owner(request)
+        booking = await reservations.lookup_booking(app.state.pool, key, reference)
+        if not booking:
+            raise HTTPException(404, "No matching booking in this guest session")
+        response.headers["Cache-Control"] = "no-store"
+        return {"booking": booking}
+
+    @app.post("/api/requests/{request_id}/confirm")
+    async def send_request(request_id: UUID, request: Request):
+        check_origin(request)
+        key = await owner(request)
+        try:
+            return await reservations.confirm_request(app.state.pool, key, request_id)
+        except reservations.ReservationError as exc:
+            raise HTTPException(409, str(exc)) from None
+
+    @app.get("/book")
+    async def booking_page():
+        return FileResponse(Path(__file__).resolve().parents[2] / "frontend/book.html")
+
+    @app.get("/api/availability")
+    async def availability(check_in: str, check_out: str, guests: int):
+        return await check_availability(app.state.pool, check_in, check_out, guests)
 
     @app.get("/api/villas/{villa_id}")
     async def villa_details(villa_id: str):
