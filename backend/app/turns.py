@@ -1,9 +1,12 @@
+import base64
 import json
-from uuid import uuid4
+from datetime import datetime
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 from sqlalchemy import text
 
+from .limits import reserve, turn_budgets
 from .schemas import Answer, context_answer
 
 
@@ -21,9 +24,10 @@ async def owned(connection, conversation_id, owner, lock=False):
         raise HTTPException(404, "not_found")
 
 
-async def create_conversation(db, owner):
+async def create_conversation(db, owner, settings):
     id = uuid4()
     async with db.transaction() as connection:
+        await reserve(connection, settings, [("guest-conversations-day", str(owner), 86400, 100)])
         await connection.execute(
             text("INSERT INTO conversations(id,owner_id) VALUES(:id,:owner)"),
             {"id": id, "owner": owner},
@@ -41,7 +45,7 @@ async def expire(connection, conversation_id):
     )
 
 
-async def admit(db, conversation_id, owner, input, timeout):
+async def admit(db, conversation_id, owner, input, timeout, settings, ip):
     async with db.transaction() as connection:
         await owned(connection, conversation_id, owner, lock=True)
         await expire(connection, conversation_id)
@@ -59,7 +63,13 @@ async def admit(db, conversation_id, owner, input, timeout):
             if old["message"] != input.message:
                 raise HTTPException(409, "idempotency_conflict")
             if old["state"] == "running":
-                raise HTTPException(409, "turn_running")
+                raise HTTPException(
+                    409,
+                    {
+                        "code": "turn_running",
+                        "status_url": f"/api/conversations/{conversation_id}/turns/{input.client_turn_id}",
+                    },
+                )
             return dict(old), False
         active = (
             await connection.execute(
@@ -69,6 +79,7 @@ async def admit(db, conversation_id, owner, input, timeout):
         ).scalar_one_or_none()
         if active:
             raise HTTPException(409, "conversation_busy")
+        await reserve(connection, settings, turn_budgets(settings, owner, ip))
         row = (
             (
                 await connection.execute(
@@ -118,24 +129,51 @@ async def finish(db, conversation_id, turn_id, state, result=None, error=None):
         return row is not None
 
 
-async def history(db, conversation_id, owner):
+def decode_cursor(cursor):
+    try:
+        if len(cursor) > 256:
+            raise ValueError("Cursor too long")
+        timestamp, id = json.loads(base64.urlsafe_b64decode(cursor.encode()))
+        when = datetime.fromisoformat(timestamp)
+        if when.tzinfo is None:
+            raise ValueError("Cursor timezone missing")
+        return {"before_time": when, "before_turn": UUID(id)}
+    except (ValueError, TypeError, KeyError) as error:
+        raise HTTPException(400, "invalid_cursor") from error
+
+
+async def history_page(db, conversation_id, owner, before=None):
+    cursor = decode_cursor(before) if before else {}
+    condition = " AND (created_at,client_turn_id)<(:before_time,:before_turn)" if cursor else ""
     async with db.transaction() as connection:
         await owned(connection, conversation_id, owner, lock=True)
         await expire(connection, conversation_id)
         rows = (
             (
                 await connection.execute(
-                    text("""
-            SELECT * FROM turns WHERE conversation_id=:id
-            ORDER BY created_at DESC,client_turn_id DESC LIMIT 50
-        """),
-                    {"id": conversation_id},
+                    text(
+                        "SELECT * FROM turns WHERE conversation_id=:id"
+                        + condition
+                        + " ORDER BY created_at DESC,client_turn_id DESC LIMIT 51"
+                    ),
+                    {"id": conversation_id, **cursor},
                 )
             )
             .mappings()
             .all()
         )
-    return [dict(row) for row in reversed(rows)]
+    page = [dict(row) for row in rows[:50]]
+    next_cursor = None
+    if len(rows) > 50:
+        oldest = page[-1]
+        next_cursor = base64.urlsafe_b64encode(
+            json.dumps([oldest["created_at"].isoformat(), str(oldest["client_turn_id"])]).encode()
+        ).decode()
+    return {"turns": list(reversed(page)), "next_cursor": next_cursor}
+
+
+async def history(db, conversation_id, owner):
+    return (await history_page(db, conversation_id, owner))["turns"]
 
 
 def context(rows):

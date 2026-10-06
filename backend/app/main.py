@@ -35,9 +35,11 @@ def create_app(settings=None, db=None, model=None):
 
     @app.exception_handler(HTTPException)
     async def http_error(request, exc):
+        body = {"code": exc.detail} if isinstance(exc.detail, str) else dict(exc.detail)
         return JSONResponse(
-            {"code": exc.detail, "request_id": request.state.request_id},
+            {**body, "request_id": request.state.request_id},
             status_code=exc.status_code,
+            headers=exc.headers,
         )
 
     @app.exception_handler(SQLAlchemyError)

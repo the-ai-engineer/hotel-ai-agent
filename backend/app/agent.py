@@ -1,4 +1,8 @@
+import asyncio
+import random
+from collections.abc import AsyncGenerator
 from contextlib import aclosing
+from contextvars import ContextVar
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -7,13 +11,55 @@ from google.adk.agents import Agent
 from google.adk.agents.run_config import RunConfig, StreamingMode
 from google.adk.events import Event
 from google.adk.models.google_llm import Gemini
+from google.adk.models.llm_request import LlmRequest
+from google.adk.models.llm_response import LlmResponse
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import Client, types
+from google.genai.errors import ClientError, ServerError
 
 from . import hotel
 from .schemas import Answer, context_answer
 from .tools import Evidence, policy_tools
+
+_model_deadline = ContextVar("model_deadline", default=None)
+_model_stats = ContextVar("model_stats", default=None)
+
+
+class BoundedGemini(Gemini):
+    async def generate_content_async(
+        self, llm_request: LlmRequest, stream: bool = False
+    ) -> AsyncGenerator[LlmResponse, None]:
+        for attempt in range(2):
+            visible = False
+            stats = _model_stats.get()
+            if stats is not None:
+                stats["model_requests"] += 1
+            try:
+                async with aclosing(
+                    super().generate_content_async(llm_request, stream)
+                ) as responses:
+                    async for response in responses:
+                        if response.content and any(
+                            p.text or p.function_call for p in response.content.parts or []
+                        ):
+                            visible = True
+                        yield response
+                return
+            except (ClientError, ServerError) as error:
+                delay = random.uniform(0.25, 0.75)
+                deadline = _model_deadline.get()
+                if (
+                    error.code not in {429, 503}
+                    or attempt
+                    or visible
+                    or (
+                        deadline is not None
+                        and deadline - asyncio.get_running_loop().time() <= delay
+                    )
+                ):
+                    raise
+                await asyncio.sleep(delay)
 
 
 class Concierge:
@@ -26,7 +72,7 @@ class Concierge:
                 location=settings.google_cloud_location,
                 http_options=types.HttpOptions(retry_options=types.HttpRetryOptions(attempts=1)),
             )
-            model = Gemini(model=settings.gemini_model, client=self.client)
+            model = BoundedGemini(model=settings.gemini_model, client=self.client)
         self.model = model
 
     async def close(self):
@@ -34,9 +80,10 @@ class Concierge:
             await self.client.aio.aclose()
             self.client.close()
 
-    async def run(self, turn_id, message: str, history: list[dict]):
+    async def run(self, turn_id, message: str, history: list[dict], remaining=90):
         if self.model is None:
             raise RuntimeError("Model access is not configured")
+        expires = asyncio.get_running_loop().time() + remaining
         evidence = Evidence()
         today = datetime.now(ZoneInfo(self.settings.hotel_timezone)).date()
         catalogue = await hotel.catalogue(self.db)
@@ -81,6 +128,9 @@ class Concierge:
                     ),
                 )
         runner = Runner(app_name="hotel", agent=agent, session_service=sessions)
+        deadline_token = _model_deadline.set(expires)
+        stats = {"model_requests": 0}
+        stats_token = _model_stats.set(stats)
         final = ""
         usage = {"input_tokens": 0, "output_tokens": 0}
         try:
@@ -114,13 +164,15 @@ class Concierge:
                 "data": Answer(
                     answer=final,
                     sources=list(evidence.sources.values())[:5],
-                    usage=usage,
+                    usage={**usage, **stats},
                     availability=evidence.availability,
                     cards=evidence.availability.villas if evidence.availability else [],
                 ).model_dump(mode="json"),
             }
         finally:
-            with anyio.move_on_after(3, shield=True):
+            _model_deadline.reset(deadline_token)
+            _model_stats.reset(stats_token)
+            with anyio.move_on_after(0.5, shield=True):
                 await runner.close()
                 await sessions.delete_session(
                     app_name="hotel", user_id="guest", session_id=str(turn_id)

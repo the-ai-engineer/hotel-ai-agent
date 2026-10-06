@@ -5,6 +5,8 @@ const messages = $("#messages");
 let conversation;
 let busy = false;
 let pending;
+let controller;
+let nextCursor;
 const storageKey = "sanctuary-conversation";
 
 async function initialize() {
@@ -15,6 +17,8 @@ async function initialize() {
       const history = await (
         await request(`/api/conversations/${conversation}`)
       ).json();
+      nextCursor = history.next_cursor;
+      $("#earlier").hidden = !nextCursor;
       messages.replaceChildren();
       for (const turn of history.turns) {
         message(messages, "user", turn.message);
@@ -26,7 +30,7 @@ async function initialize() {
         if (turn.result) answer(node, turn.result);
         if (turn.state === "running") {
           pending = turn.client_turn_id;
-          await recover(node, pending);
+          await recover(node, pending, turn.message);
         }
       }
       return;
@@ -49,8 +53,15 @@ function setBusy(value) {
   $("#chatForm button").disabled = value;
   $("#reset").disabled = value;
   $("#question").disabled = value;
+  $("#stop").hidden = !(value && controller);
 }
-async function recover(node, id) {
+function retryButton(node, text) {
+  const retry = document.createElement("button");
+  retry.textContent = "Try again";
+  retry.onclick = () => send(text);
+  node.append(document.createElement("br"), retry);
+}
+async function recover(node, id, text, attempt = 0) {
   try {
     const state = await (
       await request(`/api/conversations/${conversation}/turns/${id}`)
@@ -60,25 +71,29 @@ async function recover(node, id) {
       pending = null;
       return;
     }
-    node.textContent =
-      state.state === "running"
-        ? "Your answer is still being prepared."
-        : "This attempt did not complete. Please try again.";
     if (state.state !== "running") {
       pending = null;
+      node.textContent = "This attempt did not complete.";
+      if (text) retryButton(node, text);
       return;
     }
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      return recover(node, id, text, attempt + 1);
+    }
+    node.textContent = `Unable to confirm the result. This attempt expires at ${new Date(state.deadline).toLocaleTimeString()}.`;
   } catch (error) {
     if (error instanceof ApiError && [401, 404].includes(error.status)) {
       pending = null;
-      node.textContent = "No saved attempt was found. Please try again.";
+      node.textContent = "No saved attempt was found.";
+      if (text) retryButton(node, text);
       return;
     }
-    node.textContent = "We could not check this answer.";
+    node.textContent = "Unable to confirm the result.";
   }
   const check = document.createElement("button");
   check.textContent = "Check result";
-  check.onclick = () => recover(node, id);
+  check.onclick = () => recover(node, id, text);
   node.append(document.createElement("br"), check);
 }
 async function send(text) {
@@ -91,6 +106,7 @@ async function send(text) {
     );
     return;
   }
+  controller = new AbortController();
   setBusy(true);
   let node;
   try {
@@ -107,10 +123,14 @@ async function send(text) {
     node = message(messages, "assistant", "Looking into that…");
     const id = crypto.randomUUID();
     pending = id;
-    const response = await request(`/api/conversations/${conversation}/turns`, {
-      client_turn_id: id,
-      message: text,
-    });
+    const response = await request(
+      `/api/conversations/${conversation}/turns`,
+      {
+        client_turn_id: id,
+        message: text,
+      },
+      controller.signal,
+    );
     let complete = false;
     let partial = "";
     await readEvents(response, (event) => {
@@ -125,23 +145,33 @@ async function send(text) {
       }
       if (event.event === "error") {
         node.textContent = event.data.message;
+        retryButton(node, text);
         complete = true;
         pending = null;
       }
     });
-    if (!complete) await recover(node, id);
+    if (!complete) await recover(node, id, text);
   } catch (error) {
-    if (node && error instanceof ApiError) {
+    if (node && error instanceof ApiError && error.message === "turn_running") {
+      await recover(node, pending, text);
+    } else if (node && error instanceof ApiError) {
       pending = null;
       node.textContent =
-        error.status === 409
-          ? "Another request is already running. Please wait and try again."
-          : error.status === 401
-            ? "Your guest session has expired. Start a new conversation."
-            : error.status === 400
-              ? "Please enter a question of up to 2,000 characters."
-              : "The concierge is unavailable. Please try again.";
-    } else if (node && pending) await recover(node, pending);
+        error.status === 429
+          ? `Please wait ${error.details.retry_after || "a few"} seconds before trying again.`
+          : error.status === 409
+            ? "Another request is already running. Please wait and try again."
+            : error.status === 401
+              ? "Your guest session has expired. Start a new conversation."
+              : error.status === 400
+                ? "Please enter a question of up to 2,000 characters."
+                : "The concierge is unavailable. Please try again.";
+      if ([401, 404].includes(error.status)) {
+        conversation = null;
+        localStorage.removeItem(storageKey);
+      }
+      retryButton(node, text);
+    } else if (node && pending) await recover(node, pending, text);
     else
       message(
         messages,
@@ -151,6 +181,7 @@ async function send(text) {
           : "The concierge is unavailable. Please contact the hotel.",
       );
   } finally {
+    controller = null;
     setBusy(false);
   }
 }
@@ -203,6 +234,8 @@ $("#reset").onclick = async () => {
   conversation = null;
   pending = null;
   messages.replaceChildren();
+  nextCursor = null;
+  $("#earlier").hidden = true;
   try {
     await initialize();
   } catch {
@@ -214,3 +247,38 @@ $("#reset").onclick = async () => {
 $("#question").maxLength = 2000;
 $("#chatWelcome").textContent =
   "Ask about arrival, breakfast or available villas for your dates.";
+
+$("#stop").onclick = () => controller?.abort();
+
+$("#earlier").onclick = async () => {
+  if (!nextCursor || busy) return;
+  setBusy(true);
+  try {
+    const page = await (
+      await request(
+        `/api/conversations/${conversation}?before=${encodeURIComponent(nextCursor)}`,
+      )
+    ).json();
+    const fragment = document.createElement("div");
+    for (const turn of page.turns) {
+      message(fragment, "user", turn.message);
+      const node = message(
+        fragment,
+        "assistant",
+        "This attempt did not complete.",
+      );
+      if (turn.result) answer(node, turn.result);
+    }
+    messages.prepend(fragment);
+    nextCursor = page.next_cursor;
+    $("#earlier").hidden = !nextCursor;
+  } catch {
+    message(
+      messages,
+      "assistant",
+      "Earlier messages could not be loaded. Please try again.",
+    );
+  } finally {
+    setBusy(false);
+  }
+};

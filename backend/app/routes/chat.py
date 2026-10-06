@@ -7,10 +7,11 @@ from uuid import UUID
 import anyio
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import StreamingResponse
 
 from .. import sessions, turns
+from ..limits import ip_key
 from ..schemas import TurnInput
+from ..streaming import GuestStream, with_heartbeats
 
 router = APIRouter(prefix="/api")
 
@@ -26,17 +27,20 @@ async def session(request: Request, response: Response):
 
 @router.post("/conversations")
 async def new_conversation(request: Request, owner=Depends(sessions.session_owner)):
-    id = await turns.create_conversation(request.app.state.db, owner)
+    id = await turns.create_conversation(request.app.state.db, owner, request.app.state.settings)
     return {"id": str(id)}
 
 
 @router.get("/conversations/{conversation_id}")
 async def conversation(
-    conversation_id: UUID, request: Request, owner=Depends(sessions.session_owner)
+    conversation_id: UUID,
+    request: Request,
+    before: str | None = None,
+    owner=Depends(sessions.session_owner),
 ):
     return {
         "id": str(conversation_id),
-        "turns": await turns.history(request.app.state.db, conversation_id, owner),
+        **await turns.history_page(request.app.state.db, conversation_id, owner, before),
     }
 
 
@@ -53,14 +57,25 @@ async def question(
 ):
     db = request.app.state.db
     record, fresh = await turns.admit(
-        db, conversation_id, owner, input, request.app.state.settings.turn_timeout_seconds
+        db,
+        conversation_id,
+        owner,
+        input,
+        request.app.state.settings.turn_timeout_seconds,
+        request.app.state.settings,
+        ip_key(request),
     )
     status_url = f"/api/conversations/{conversation_id}/turns/{input.client_turn_id}"
 
     async def stream():
         try:
             yield sse(
-                "turn_started", {"turn_id": str(input.client_turn_id), "status_url": status_url}
+                "turn_started",
+                {
+                    "turn_id": str(input.client_turn_id),
+                    "status_url": status_url,
+                    "deadline": record["deadline"],
+                },
             )
             if not fresh:
                 if record["state"] == "completed":
@@ -82,10 +97,21 @@ async def question(
                 max(0, (record["deadline"] - datetime.now(UTC)).total_seconds())
             ):
                 async with aclosing(
-                    request.app.state.concierge.run(input.client_turn_id, input.message, history)
+                    with_heartbeats(
+                        request.app.state.concierge.run(
+                            input.client_turn_id,
+                            input.message,
+                            history,
+                            remaining=max(
+                                0, (record["deadline"] - datetime.now(UTC)).total_seconds()
+                            ),
+                        )
+                    )
                 ) as events:
                     async for event in events:
-                        if event["event"] == "answer":
+                        if event is None:
+                            yield ": heartbeat\n\n"
+                        elif event["event"] == "answer":
                             result = event["data"]
                         else:
                             yield sse(event["event"], event["data"])
@@ -98,7 +124,7 @@ async def question(
         except asyncio.CancelledError:
             raise
         except Exception:
-            with anyio.move_on_after(3, shield=True), suppress(Exception):
+            with anyio.move_on_after(2, shield=True), suppress(Exception):
                 await turns.finish(
                     db, conversation_id, input.client_turn_id, "failed", error="unavailable"
                 )
@@ -112,7 +138,7 @@ async def question(
             )
         finally:
             if fresh:
-                with anyio.move_on_after(3, shield=True), suppress(Exception):
+                with anyio.move_on_after(2, shield=True), suppress(Exception):
                     await turns.finish(
                         db,
                         conversation_id,
@@ -121,6 +147,6 @@ async def question(
                         error="interrupted",
                     )
 
-    return StreamingResponse(
+    return GuestStream(
         stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store"}
     )

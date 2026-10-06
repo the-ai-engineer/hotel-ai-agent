@@ -5,6 +5,8 @@ from uuid import UUID, uuid4
 from fastapi import HTTPException, Request, Response
 from sqlalchemy import text
 
+from .limits import ip_key, reserve
+
 COOKIE = "hotel_session"
 
 
@@ -39,6 +41,12 @@ async def ensure_session(request: Request, response: Response) -> dict:
             raise
     owner, token = uuid4(), secrets.token_urlsafe(32)
     async with request.app.state.db.transaction() as connection:
+        settings = request.app.state.settings
+        await reserve(
+            connection,
+            settings,
+            [("session-ip-minute", ip_key(request), 60, settings.demo_ip_limit_override or 10)],
+        )
         await connection.execute(
             text("INSERT INTO guest_sessions(id,token_hash) VALUES(:id,:token)"),
             {"id": owner, "token": token_hash(token)},

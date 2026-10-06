@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
 
@@ -28,6 +28,17 @@ class Boundary:
                     {"code": code, "request_id": request_id}, status_code=status
                 )(scope, receive, send)
 
+        received = 0
+
+        async def bounded_receive():
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > 32768:
+                    raise HTTPException(413, "body_too_large")
+            return message
+
         async def respond(message):
             if message["type"] == "http.response.start":
                 message = {**message, "headers": list(message.get("headers", []))}
@@ -36,4 +47,4 @@ class Boundary:
                     message["headers"].append((b"cache-control", b"no-store"))
             await send(message)
 
-        await self.app(scope, receive, respond)
+        await self.app(scope, bounded_receive, respond)

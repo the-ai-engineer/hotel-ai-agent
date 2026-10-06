@@ -1,20 +1,25 @@
 export class ApiError extends Error {
-  constructor(code, status) {
+  constructor(code, status, details = {}) {
     super(code);
     this.status = status;
+    this.details = details;
   }
 }
 
-export async function request(path, body) {
+export async function request(path, body, signal) {
   const response = await fetch(path, {
     method: body === undefined ? "GET" : "POST",
     credentials: "same-origin",
+    signal,
     headers: body === undefined ? {} : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new ApiError(error.code || "unavailable", response.status);
+    throw new ApiError(error.code || "unavailable", response.status, {
+      ...error,
+      retry_after: response.headers?.get("Retry-After"),
+    });
   }
   return response;
 }

@@ -2,7 +2,6 @@ import asyncio
 import os
 from uuid import uuid4
 
-import httpx
 import pytest
 from google.adk.models.base_llm import BaseLlm
 from google.adk.models.llm_response import LlmResponse
@@ -13,7 +12,6 @@ from sqlalchemy import text
 from app import hotel, turns
 from app.agent import Concierge
 from app.config import Settings
-from app.main import create_app
 from app.schemas import TurnInput
 
 
@@ -44,26 +42,6 @@ class PolicyModel(BaseLlm):
                     ],
                 )
             )
-
-
-@pytest.fixture
-async def client(db):
-    app = create_app(
-        Settings(
-            _env_file=None,
-            google_cloud_project="",
-            database_url=os.environ["TEST_DATABASE_URL"],
-        ),
-        db=db,
-        model=PolicyModel(),
-    )
-    async with app.router.lifespan_context(app):
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app),
-            base_url="http://127.0.0.1:8773",
-            headers={"Origin": "http://127.0.0.1:8773"},
-        ) as client:
-            yield client
 
 
 async def new(client):
@@ -128,12 +106,14 @@ async def test_parallel_admission_and_deadline(db):
             text("INSERT INTO guest_sessions(id,token_hash) VALUES(:id,:hash)"),
             {"id": owner, "hash": str(owner)},
         )
-    conversation = await turns.create_conversation(db, owner)
+    conversation = await turns.create_conversation(db, owner, Settings(_env_file=None))
     first = TurnInput(client_turn_id=uuid4(), message="breakfast")
 
     async def admit():
         try:
-            return await turns.admit(db, conversation, owner, first, 90)
+            return await turns.admit(
+                db, conversation, owner, first, 90, Settings(_env_file=None), "127.0.0.1"
+            )
         except Exception as e:
             return e
 
@@ -238,7 +218,8 @@ async def test_pinned_adk_uses_explicit_vertex_client(db, monkeypatch):
     await concierge.close()
 
 
-async def test_disconnect_closes_run_and_marks_interrupted(client):
+@pytest.mark.parametrize("asgi_version", ["2.3", "2.4"])
+async def test_disconnect_closes_run_and_marks_interrupted(client, asgi_version):
     import json
 
     app = client._transport.app
@@ -247,7 +228,7 @@ async def test_disconnect_closes_run_and_marks_interrupted(client):
     started = asyncio.Event()
 
     class SlowConcierge:
-        async def run(self, *args):
+        async def run(self, *args, **kwargs):
             try:
                 yield {"event": "text_delta", "data": {"text": "Starting"}}
                 await asyncio.sleep(30)
@@ -276,7 +257,7 @@ async def test_disconnect_closes_run_and_marks_interrupted(client):
 
     scope = {
         "type": "http",
-        "asgi": {"version": "3.0", "spec_version": "2.3"},
+        "asgi": {"version": "3.0", "spec_version": asgi_version},
         "http_version": "1.1",
         "method": "POST",
         "scheme": "http",
