@@ -3,19 +3,42 @@
 The recording starting point for adding an AI concierge to Sanctuary Hotel,
 a fictional luxury forest retreat.
 
-**Status:** static website and chat widget only. The widget opens and closes,
-but replies are disabled. No backend, agent, database or cloud deployment is
-included in this starting version. The generated photography and fading hero
-video are preserved.
+**Status:** the existing website is connected to a local ADK policy concierge using
+Gemini 3.8 Flash on Vertex AI. Policies and completed conversations live in
+PostgreSQL. Villa availability, stronger turn recovery, production limits and
+cloud deployment are later Linear slices. This branch is a local development demo.
 
-## Start recording here
+## Run the agent locally
+
+Prompt: “Check uv, Docker, gcloud and application credentials. Set up the local
+PostgreSQL database, apply migrations, import hotel policies and run the existing
+website with its real ADK concierge. Keep credentials outside Git.”
 
 ```bash
-bash scripts/dev.sh
+gcloud auth application-default login
+gcloud auth application-default set-quota-project personal-infrastructure-505708
+docker compose up -d postgres
+cp backend/.env.example backend/.env
+uv sync --directory backend
+uv run --directory backend python -m app.db migrate
+uv run --directory backend python -m app.db seed
+bash scripts/dev-agent.sh
 ```
 
-Open http://127.0.0.1:8773/. Python 3 is the only runtime requirement for the
-starting website. Node is used for JavaScript syntax checks.
+Open http://127.0.0.1:8773/. Ask “Is breakfast included?” then “Can it be brought
+to our terrace?” Open a source link and refresh: completed answers are saved.
+Model requests go to your Google Cloud project and incur inference charges.
+The app uses application credentials, which are separate from gcloud's CLI login.
+
+If port 55439 already serves an older hotel database, preserve its data. Create
+an isolated database named `hotel_policy` there, or set another local port in
+Compose and `backend/.env`. Do not replace another application's volume.
+
+## Website-only recording start
+
+The `recording-start-20261006` tag preserves the disabled-widget starting point.
+Use `bash scripts/dev.sh` there for the static website. Record build sections
+from checked commits, using [the recording guide](resources/recording-guide.md).
 
 ## Checks
 
@@ -23,7 +46,10 @@ starting website. Node is used for JavaScript syntax checks.
 python3 scripts/verify_website.py
 node --check frontend/js/site.js
 node --check frontend/js/chat.js
-bash -n scripts/dev.sh
+node frontend/tests/chat.test.cjs
+bash -n scripts/dev.sh scripts/dev-agent.sh
+uv run --directory backend ruff check app tests
+uv run --directory backend pytest -q
 ```
 
 ## Recording and build references
@@ -37,7 +63,8 @@ bash -n scripts/dev.sh
 ## Layout
 
 - `frontend/`: HTML, CSS, site/widget JavaScript and generated assets.
-- `scripts/`: start and check the saved website.
+- `backend/`: API, isolated ADK invocations, document tools, migrations and tests.
+- `scripts/`: start and check the website and agent.
 - `docs/`: the planned product and architecture.
 - `hotel/`: fictional policies and structured inventory.
 - `evals/`: guest questions and expected behavior.

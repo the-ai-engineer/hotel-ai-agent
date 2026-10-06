@@ -132,7 +132,7 @@
 <span id="avatar">S</span>
 <div>
 <strong id="chatName">Your Sanctuary concierge</strong>
-<small>Concierge preview</small>
+<small>Hotel information</small>
 </div>
 <button id="closeChat" aria-label="Close concierge">×</button>
 </div>
@@ -140,17 +140,18 @@
 <div id="chatWelcome">
 <div class="greeting">How can we help?</div>
 <p>Ask about our villas, dining or your stay.</p>
-<p>Concierge preview. Replies are not available yet.</p>
+<p>Ask about dining, arrival or hotel policies. This is a fictional hotel demo.</p>
 </div>
 <div id="messages" aria-live="polite">
 </div>
 </div>
 <div class="chat-bottom">
 <form id="chatForm">
-<input id="question" aria-label="Ask the concierge" placeholder="How may we help you?" disabled>
-<button type="submit" aria-label="Send question" disabled>↑</button>
+<input id="question" aria-label="Ask the concierge" placeholder="How may we help you?" maxlength="2000">
+<button type="submit" aria-label="Send question">↑</button>
 </form>
-<p>Hotel information · No reservations made </p>
+<button id="stopAnswer" type="button" hidden>Stop answer</button>
+<p>AI concierge · No reservations made</p>
 </div>
 </aside>
 <button id="launch" data-chat>

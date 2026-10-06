@@ -4,7 +4,7 @@ Canonical build direction, 6 October 2026. Read [Requirements](Requirements.md) 
 
 ## Current state
 
-This recording baseline contains only the static website and disabled chat preview. The backend, database and deployment are to be built. Earlier implementations and detailed documents are preserved on `codex/agent-build-backup-20261006`.
+The first policy slice connects the static website to FastAPI, an isolated ADK invocation and local PostgreSQL. Villa tools, full turn recovery, abuse limits and deployment remain planned. Earlier unfinished implementations were not reused.
 
 ## Runtime diagram
 
@@ -40,7 +40,7 @@ frontend/                 static hotel site, assets and browser modules
 backend/
   app/                    settings, DB, sessions, turns, agent, tools and hotel queries
     routes/               chat, public sources and health endpoints
-  migrations/             explicit Alembic revisions
+  migrations/             ordered SQL migrations with a transactional version ledger
   seeds/                  importer for hotel/ source files; no duplicate content
   tests/                  agent contracts and real PostgreSQL integration tests
   pyproject.toml
@@ -55,7 +55,7 @@ compose.yaml              local PostgreSQL
 Dockerfile                one image containing frontend and backend
 ```
 
-This is the target layout. The backend, infrastructure, Dockerfile and Compose configuration do not exist yet; add them as their slices are built. Use plain browser JavaScript and Python async I/O. Routes call focused application modules; tools delegate to hotel queries. Keep ADK types inside the agent adapter. Avoid generic repositories, provider factories and agent teams.
+This is the target layout. The first slice uses focused app modules, SQL migrations and Compose; add routes subfolders only when the growing application needs them. Infrastructure and Dockerfile remain future slices. Use plain browser JavaScript and Python async I/O. Routes call focused application modules; tools delegate to hotel queries. Keep ADK types inside the agent adapter. Avoid generic repositories, provider factories and agent teams.
 
 ## Guest turn and durable state
 
@@ -168,3 +168,9 @@ Each Linear slice ends with a guest-visible result and recorded verification. Cr
 - [Agents CLI](https://github.com/google/agents-cli): setup, existing-project enhancement, evaluation and deployment capabilities.
 - [Cloud Run concurrency](https://docs.cloud.google.com/run/docs/about-concurrency): instance request settings and scaling.
 - [Cloud Run request timeout](https://docs.cloud.google.com/run/docs/configuring/request-timeout): platform timeout behavior.
+
+## First policy slice limits
+
+The local prototype stores a single owned conversation per guest cookie and loads only completed turns. PostgreSQL prevents simultaneous submissions, and final output is saved before completion is signalled. Full repeated-turn result replay, crash recovery, shared abuse budgets and per-instance model admission belong to GRA-214. Do not expose this slice publicly. Source content is served as plain text at the exact published revision.
+
+Ordered SQL migrations run under a transaction and advisory lock with a schema version ledger. This keeps the initial schema change path small; migrations and seeds are explicit commands, never startup side effects.

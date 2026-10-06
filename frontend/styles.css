@@ -32,3 +32,11 @@ header{justify-content:flex-start;gap:30px;padding:0 6%}header .brand{position:s
 .message {white-space:pre-wrap;margin:14px 0;padding:14px;background:#f3f3ed;color:#203c30;line-height:1.6;border-radius:8px;overflow-wrap:anywhere}.message.user {background:#e4ebe3}.message a {text-decoration:underline;color:#234d38}.message button {margin-top:10px;padding:8px}.chat-bottom button:disabled {opacity:.5}.chat-bottom input {color:#203c30}
 
 .villa-result {margin-top:16px;border:1px solid #c5cfc3;border-radius:8px;padding:12px;background:white}.villa-result img {width:100%;height:150px;object-fit:cover;margin-bottom:10px}.villa-result strong {display:block}.villa-result p {margin:8px 0}
+
+/* Policy concierge: model text is rendered as text, source links separately. */
+.concierge-message { margin: 12px 0; padding: 14px 16px; border-radius: 12px; background: #f0f1eb; color: #26392b; font: 15px/1.65 Arial, sans-serif; white-space: pre-wrap; overflow-wrap: anywhere; }
+.concierge-message.guest { margin-left: 25px; background: #263f30; color: #fff; }
+.concierge-message.notice { background: #fff2dc; color: #59401e; }
+.concierge-source { display: block; margin-top: 10px; font-size: 12px; color: #245338; text-decoration: underline; }
+#stopAnswer { margin-top: 8px; padding: 6px 10px; border: 1px solid #53735c; color: #263f30; background: white; border-radius: 5px; }
+#stopAnswer[hidden] { display: none; }
