@@ -48,7 +48,7 @@
     "question": "Two guests, 1\u20133 November 2026. Which villas are available?",
     "expected_tool_or_action": "check_availability",
     "expected_behavior": [
-      "Both villas match; checkout does not block night 3."
+      "Both villas match: Forest Suite booking begins on checkout day, 3 November. Garden Villa cancelled booking does not block."
     ],
     "source_ids": []
   },
@@ -137,5 +137,27 @@
     ],
     "source_ids": [],
     "setup": "Inject availability lookup failure."
+  },
+  {
+    "id": "breakfast-hours",
+    "question": "What time is breakfast?",
+    "expected_tool_or_action": "search_policies",
+    "expected_behavior": [
+      "07:00 to 10:30 daily."
+    ],
+    "source_ids": [
+      "dining-policy"
+    ]
+  },
+  {
+    "id": "spa",
+    "question": "Can I book a spa treatment?",
+    "expected_tool_or_action": "search_policies",
+    "expected_behavior": [
+      "Staff confirmation required; concierge cannot book. No contact destination currently configured."
+    ],
+    "source_ids": [
+      "services-policy"
+    ]
   }
 ]

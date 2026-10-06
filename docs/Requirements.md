@@ -14,7 +14,7 @@ Keep the existing Sanctuary Hotel website. Connect its disabled concierge previe
 - Ask for a villa for two on exact dates. See matching villa cards with photos, capacity and searched dates.
 - Ask a follow-up about cancellation. The agent keeps the conversation context and retrieves policy evidence.
 - Refresh the page. Completed answers and cards remain available to the same browser session.
-- If information is missing or a dependency fails, get an honest explanation, retry option or hotel contact link.
+- If information is missing or a dependency fails, get an honest explanation, retry option or explanation that staff confirmation is required.
 
 ## Acceptance criteria
 
@@ -27,7 +27,7 @@ Keep the existing Sanctuary Hotel website. Connect its disabled concierge previe
 | R5 | Each conversation permits one active turn. Retrying the same turn ID never starts another invocation. | Two API processes sharing PostgreSQL; duplicate and competing POST tests. |
 | R6 | Completed answers survive restart. Stop, disconnect, timeout and failed persistence cannot turn partial output into a completed answer. | Cancellation, recovery, crash and final-write race checks. |
 | R7 | Independent guest turns progress concurrently with isolated history and tool evidence. | At least 20 conversations across two processes locally; staged deployed capacity exercise below. |
-| R8 | The widget supports loading, Stop, retry, refresh recovery, expired session, empty results and contact hotel. | Desktop/mobile browser checks, keyboard access, readable contrast, safe rendering and reduced motion. |
+| R8 | The widget supports loading, Stop, retry, refresh recovery, expired session, empty results and truthful staff-confirmation guidance. | Desktop/mobile browser checks, keyboard access, readable contrast, safe rendering and reduced motion. |
 | R9 | Abuse limits and bounded model context apply before model calls. No credentials or private records reach the browser. | Shared-budget tests, runtime database permission tests and configured deployment checks. |
 | R10 | Failures are traceable without logging guest text or secrets. Conversation data is deleted on schedule. | Injected lookup failure, linked trace/logs, delivered alert and retention cleanup. |
 | R11 | A clean checkout can be installed, migrated, explicitly seeded, run, evaluated and deployed using documented prompts and commands. | Rehearsal with recorded versions and successful outputs. |
@@ -49,7 +49,7 @@ Stage the deployed test at 10, 25, 50 and 100 active turns. Sustain the final st
 
 ## Out of scope
 
-Booking or payment writes, prices, verified guest accounts, WhatsApp, multiple hotels, a staff inbox, a CMS, embeddings and background agent orchestration. The contact action is a normal link, not a staffed live-chat handoff.
+Booking or payment writes, prices, verified guest accounts, WhatsApp, multiple hotels, a staff inbox, a CMS, embeddings and background agent orchestration. No contact destination is configured in the source pack. Explain this honestly; add a normal contact link only when a destination is approved. There is no staffed live-chat handoff.
 
 ## Decisions before release
 

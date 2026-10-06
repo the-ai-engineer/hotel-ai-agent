@@ -41,11 +41,12 @@ backend/
   app/                    settings, DB, sessions, turns, agent, tools and hotel queries
     routes/               chat, public sources and health endpoints
   migrations/             explicit Alembic revisions
-  seeds/                  fictional hotel data
+  seeds/                  importer for hotel/ source files; no duplicate content
   tests/                  agent contracts and real PostgreSQL integration tests
   pyproject.toml
   uv.lock
 infra/                    repeatable provisioning, release and maintenance commands
+hotel/                    reviewed fictional policies, villas and nightly inventory
 evals/                    fixed guest questions and expected facts
 scripts/                  local run and verification commands
 docs/                     requirements and architecture
@@ -54,7 +55,7 @@ compose.yaml              local PostgreSQL
 Dockerfile                one image containing frontend and backend
 ```
 
-This is the target layout. Only `frontend/` exists today; add the other components as their slices are built. Use plain browser JavaScript and Python async I/O. Routes call focused application modules; tools delegate to hotel queries. Keep ADK types inside the agent adapter. Avoid generic repositories, provider factories and agent teams.
+This is the target layout. The backend, infrastructure, Dockerfile and Compose configuration do not exist yet; add them as their slices are built. Use plain browser JavaScript and Python async I/O. Routes call focused application modules; tools delegate to hotel queries. Keep ADK types inside the agent adapter. Avoid generic repositories, provider factories and agent teams.
 
 ## Guest turn and durable state
 
@@ -91,7 +92,7 @@ Store guest sessions, owned conversations, immutable turn attempts, published do
 | `get_villa(villa_id)` | Public description, capacity, amenities and approved image path. |
 | `check_availability(check_in, check_out, guests)` | Deterministic full-stay availability, matching villa data and checked-at time. |
 
-Use parameterized SQL. Missing inventory nights are unavailable; checkout is exclusive; blocking bookings and closed nights remove a villa. Validate dates, horizon, stay length and party size before lookup. The property timezone is `Asia/Makassar`.
+Use parameterized SQL. Missing inventory nights are unavailable; checkout is exclusive; blocking bookings and closed nights remove a villa. Validate dates, stay length and party size before lookup. The availability tool checks the fixture horizon and reports missing dates as unknown. The property timezone is `Asia/Makassar`.
 
 The model explains evidence and chooses tools. It cannot write bookings, run arbitrary SQL or determine authorization. Cards come from validated tool results, not generated HTML. Render model/user text as text; allow only approved source and image URLs. Add semantic retrieval only if evaluation identifies a problem full-text search cannot reasonably solve.
 
