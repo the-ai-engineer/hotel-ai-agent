@@ -20,7 +20,7 @@ Keep the existing Sanctuary Hotel website. Connect its disabled concierge previe
 
 | ID | Requirement | Evidence |
 | --- | --- | --- |
-| R1 | Policy answers use published hotel evidence. Missing evidence is acknowledged. | Fixed questions, fact assertions and working source links; unpublished documents excluded. |
+| R1 | Policy answers read complete published documents selected from the catalogue. Summaries alone are not evidence; missing evidence is acknowledged. | Fixed questions and paraphrases, selected-document/read traces, fact assertions and versioned source links; unpublished documents excluded. |
 | R2 | Villa cards match capacity and availability for every night of the requested stay. | PostgreSQL tests for overlapping bookings, adjacent stays, closed/missing nights and cancelled bookings. |
 | R3 | Ambiguous dates and missing guest counts prompt clarification before lookup. No invented prices or booking confirmation. | Evaluation cases and browser journey. |
 | R4 | Anonymous guests can access only their own conversations. | Cookie, Origin, expiry and cross-session ownership tests on every read/write endpoint. |

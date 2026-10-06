@@ -8,7 +8,7 @@ Run `bash scripts/dev.sh`. Show the homepage and open the widget: there are no a
 
 ## Requirements, architecture and plan
 
-Show `docs/Requirements.md`, the diagram in `docs/Architecture.md`, and the Linear milestones. Policies need evidence lookup; availability needs deterministic inventory lookup. Chat uses asynchronous HTTP and SSE without a queue. PostgreSQL owns conversations across instances.
+Show `docs/Requirements.md`, the diagram in `docs/Architecture.md`, and the Linear milestones. Policies need catalogue selection and complete document reads; availability needs deterministic inventory lookup. Chat uses asynchronous HTTP and SSE without a queue. PostgreSQL owns conversations across instances.
 
 ## Tool setup
 
@@ -20,10 +20,10 @@ Show CLI help before choosing flags. Use the existing cloud project `personal-in
 
 | Slice | Concise prompt | Visible checkpoint |
 | --- | --- | --- |
-| GRA-212: sourced policy answer | “Read the requirements and architecture. Use Agents CLI skills to add the smallest ADK policy agent, local PostgreSQL, repeatable hotel seeds and sourced answers. Connect the existing widget through FastAPI and SSE. Preserve the design.” | Ask about breakfast, open the policy source, show the tool and its SQL. |
+| GRA-212: sourced policy answer | “Read the requirements and architecture. Use Agents CLI skills to add the smallest ADK policy agent with list_documents and read_document, local PostgreSQL, repeatable hotel seeds and sourced answers. Connect the existing widget through FastAPI and SSE. Preserve the design.” | Ask about breakfast, open the policy source, show catalogue selection, the document read and its versioned source. |
 | GRA-213: villa availability | “Add read-only villa and availability tools using the source fixtures. Validate exact dates and capacity. Return validated cards, not generated HTML.” | Available stay, blocked stay, missing date clarification. |
 | GRA-214: conversation state | “Implement owned guest sessions, saved turns, idempotency, bounded history and interrupted-turn recovery. Prove two guests cannot share history.” | Refresh, separate browser sessions, interruption and retry. |
-| GRA-215: evaluations | “Turn the fixed guest cases into checks. Assert tool facts deterministically and evaluate answer grounding. Report failures before fixing and rerunning.” | Inspect an actual failure if one occurs, then show the checked dataset. |
+| GRA-215: evaluations | “Turn the fixed guest cases into checks. Assert selected-document reads and tool facts deterministically; test paraphrases and cross-document answer grounding. Report failures before fixing and rerunning.” | Inspect an actual failure if one occurs, then show the checked dataset. |
 
 Run one slice at a time. Inspect the diff and checks, request an independent review, commit and update its Linear issue. Do not narrate completion before the real model and browser journey pass.
 
