@@ -185,3 +185,60 @@ async def test_disconnect_cleans_up_inside_cancelled_asgi_scope(client, pool):
         json={"turn_id": str(uuid.uuid4()), "message": "Retry"},
     )
     assert "event: done" in response.text
+
+
+async def test_disconnect_before_stream_starts_releases_admission(client, pool):
+    import asyncio
+    import json
+
+    await start(client)
+    called = False
+
+    async def model(pool, settings, history, question):
+        nonlocal called
+        called = True
+        yield {"type": "result", "answer": "Not reached", "sources": []}
+
+    client.app.state.answer = model
+    turn_id = uuid.uuid4()
+    body = json.dumps({"turn_id": str(turn_id), "message": "Breakfast?"}).encode()
+    received = False
+
+    async def receive():
+        nonlocal received
+        if not received:
+            received = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return {"type": "http.disconnect"}
+
+    async def send(message):
+        if message["type"] == "http.response.start":
+            # Disconnect cancels the response before it enters the body iterator.
+            await asyncio.Event().wait()
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/api/chat",
+        "raw_path": b"/api/chat",
+        "query_string": b"",
+        "root_path": "",
+        "server": ("127.0.0.1", 8773),
+        "client": ("127.0.0.1", 10000),
+        "headers": [
+            (b"origin", ORIGIN["Origin"].encode()),
+            (b"content-type", b"application/json"),
+            (b"cookie", f"hotel_session={client.cookies['hotel_session']}".encode()),
+        ],
+    }
+    await asyncio.wait_for(client.app(scope, receive, send), 5)
+    assert not called
+    async with pool.acquire() as conn:
+        assert (
+            await conn.fetchval("SELECT status FROM turns WHERE id=$1", turn_id)
+            == "interrupted"
+        )
+        assert await conn.fetchval("SELECT active_turn FROM guest_sessions") is None

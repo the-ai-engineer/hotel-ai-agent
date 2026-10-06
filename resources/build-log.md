@@ -45,8 +45,8 @@ and deployment integration are later slices; do not claim CLI run/eval passed he
 - Mobile 390 × 844 bounds and keyboard Escape/focus restoration passed; no console errors.
 - PostgreSQL tests cover immutable revisions, atomic import failure, withdrawal,
   complete bodies, catalogue limits, safe source reads, guest ownership, failed
-  provisional output and duplicate submission rejection. Eleven tests pass, including
-  actual ADK tool dispatch and cancelled ASGI disconnect cleanup.
+  provisional output and duplicate submission rejection. Twelve tests pass, including
+  actual ADK tool dispatch, cancelled ASGI cleanup and disconnect before streaming starts.
 - The retained Node regression test proves one widget initialization during early submit.
 - Independent agent review approved. Claude identified the cancellation cleanup defect;
   it was fixed with a bounded cancellation shield and a regression test.

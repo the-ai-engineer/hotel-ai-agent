@@ -186,9 +186,11 @@ def create_app(settings=None):
                     question.turn_id,
                 )
 
+        completed = False
+        failure_status = "interrupted"
+
         async def stream():
-            completed = False
-            failure_status = "interrupted"
+            nonlocal completed, failure_status
             try:
                 yield event("turn_started", {"turn_id": str(question.turn_id)})
                 async with asyncio.timeout_at(deadline):
@@ -240,17 +242,23 @@ def create_app(settings=None):
                     "error",
                     {"message": "We could not complete that answer. Please try again."},
                 )
-            finally:
-                if not completed:
-                    try:
-                        # Starlette cancels the surrounding anyio scope on disconnect.
-                        # Shield DB cleanup from repeated cancellation, with a short bound.
-                        with anyio.CancelScope(shield=True), anyio.fail_after(4):
-                            await release(failure_status)
-                    except Exception:
-                        log.warning("turn_cleanup_failed turn_id=%s", question.turn_id)
 
-        return StreamingResponse(
+        class GuestResponse(StreamingResponse):
+            async def __call__(self, scope, receive, send):
+                try:
+                    await super().__call__(scope, receive, send)
+                finally:
+                    # Also release admission if disconnect happens before stream() starts.
+                    if not completed:
+                        try:
+                            with anyio.CancelScope(shield=True), anyio.fail_after(4):
+                                await release(failure_status)
+                        except Exception:
+                            log.warning(
+                                "turn_cleanup_failed turn_id=%s", question.turn_id
+                            )
+
+        return GuestResponse(
             stream(),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
