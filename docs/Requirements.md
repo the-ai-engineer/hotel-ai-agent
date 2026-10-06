@@ -6,7 +6,7 @@ Canonical product scope, 6 October 2026. [Architecture](Architecture.md) defines
 
 Visitors should find reliable answers and suitable accommodation without waiting for hotel staff. Staff should spend less time answering repeated questions. These are intended benefits to validate with a real hotel, not measured results of this demo.
 
-Keep the existing Sanctuary Hotel website. Connect its disabled concierge preview to a real ADK agent. The demo uses fictional published policies, villas and occupancy in PostgreSQL. It checks availability but never creates a booking.
+Keep the existing Sanctuary Hotel website. Connect its disabled concierge preview to a real ADK agent. The demo uses fictional published policies, villas and occupancy in PostgreSQL. Published optional service charges may be explained; nightly room prices are not available. It checks availability but never creates a booking.
 
 ## Finished guest journey
 
@@ -49,7 +49,7 @@ Stage the deployed test at 10, 25, 50 and 100 active turns. Sustain the final st
 
 ## Out of scope
 
-Booking or payment writes, prices, verified guest accounts, WhatsApp, multiple hotels, a staff inbox, a CMS, embeddings and background agent orchestration. No contact destination is configured in the source pack. Explain this honestly; add a normal contact link only when a destination is approved. There is no staffed live-chat handoff.
+Booking or payment writes, accommodation pricing, verified guest accounts, WhatsApp, multiple hotels, a staff inbox, a CMS, embeddings and background agent orchestration. No contact destination is configured in the source pack. Explain this honestly; add a normal contact link only when a destination is approved. There is no staffed live-chat handoff.
 
 ## Decisions before release
 

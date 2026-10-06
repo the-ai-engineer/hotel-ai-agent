@@ -4,7 +4,7 @@ Start with the website and disabled concierge preview. Record the screen during 
 
 ## Website starting point
 
-Run `bash scripts/dev.sh`. Show the homepage and open the widget: there are no agent responses yet. Explain the guest and hotel problem. Show `hotel/` and the fixed questions in `evals/`.
+Run `bash scripts/dev.sh`. Show the homepage and open the widget: there are no agent responses yet. Explain the guest and hotel problem. Show `hotel/` and the fixed questions in `evals/`. Use [demo.md](../demo.md) as the on-screen question checklist.
 
 ## Requirements, architecture and plan
 
@@ -41,7 +41,7 @@ GRA-218: stage 10, 25, 50 and 100 active turns after agreeing the test spend. Sh
 
 ## Finish the video
 
-Record the working demo for the opening. Recap the guest journey, evaluations and operational checks. State remaining production work: booking provider, approved policies, public abuse controls and operational ownership.
+Record the family conversation in demo.md for the opening: suitable villa, early arrival, then vegan breakfast and the allergy boundary. Show tool calls, sources and saved history. Recap the guest journey, evaluations and operational checks. State remaining production work: booking provider, approved policies, public abuse controls and operational ownership.
 
 ## Fresh chat handoff
 

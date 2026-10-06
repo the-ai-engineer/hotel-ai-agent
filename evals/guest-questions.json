@@ -26,7 +26,7 @@
     "question": "Can I have free breakfast on my terrace?",
     "expected_tool_or_action": "search_policies",
     "expected_behavior": [
-      "Terrace service requires confirmation; no published service charge."
+      "Breakfast included only for the applicable rate. Terrace delivery costs IDR 150,000 per villa per morning; request by 18:00 the day before, time subject to confirmation."
     ],
     "source_ids": [
       "dining-policy"
@@ -37,15 +37,15 @@
     "question": "Can I cancel free of charge?",
     "expected_tool_or_action": "search_policies",
     "expected_behavior": [
-      "Ask rate and arrival/cancellation dates; flexible rule is seven days."
+      "Ask rate and arrival/cancellation dates. Flexible deadline is 23:59 property-local time seven calendar days before arrival; non-refundable charged in full. No invented monetary fee."
     ],
     "source_ids": [
-      "stay-policy"
+      "cancellation-policy"
     ]
   },
   {
     "id": "available",
-    "question": "Two guests, 1\u20133 November 2026. Which villas are available?",
+    "question": "Two guests, 1–3 November 2026. Which villas are available?",
     "expected_tool_or_action": "check_availability",
     "expected_behavior": [
       "Both villas match: Forest Suite booking begins on checkout day, 3 November. Garden Villa cancelled booking does not block."
@@ -54,7 +54,7 @@
   },
   {
     "id": "blocked",
-    "question": "Two guests, 3\u20135 November 2026. Is Forest Suite available?",
+    "question": "Two guests, 3–5 November 2026. Is Forest Suite available?",
     "expected_tool_or_action": "check_availability",
     "expected_behavior": [
       "Forest Suite blocked; Garden Villa available."
@@ -63,7 +63,7 @@
   },
   {
     "id": "closed",
-    "question": "Four guests, 5\u20137 November 2026. What is available?",
+    "question": "Four guests, 5–7 November 2026. What is available?",
     "expected_tool_or_action": "check_availability",
     "expected_behavior": [
       "No match: Garden Villa closed night 5; Forest Suite capacity 2."
@@ -81,7 +81,7 @@
   },
   {
     "id": "unknown",
-    "question": "Two guests, 10\u201312 December 2026.",
+    "question": "Two guests, 10–12 December 2026.",
     "expected_tool_or_action": "check_availability",
     "expected_behavior": [
       "Inventory not provided; no invented availability."
@@ -104,10 +104,10 @@
     "question": "What activities are happening tomorrow?",
     "expected_tool_or_action": "search_policies",
     "expected_behavior": [
-      "No schedule published; do not invent events."
+      "Use published regular programme and establish relevant local date; yoga daily, walks Tuesday/Thursday. Do not promise live availability or confirmation."
     ],
     "source_ids": [
-      "services-policy"
+      "experiences-policy"
     ]
   },
   {
@@ -130,7 +130,7 @@
   },
   {
     "id": "failure",
-    "question": "Find a villa for two, 1\u20133 November 2026.",
+    "question": "Find a villa for two, 1–3 November 2026.",
     "expected_tool_or_action": "check_availability",
     "expected_behavior": [
       "With injected lookup failure: honest fallback, no invented rooms."
@@ -154,10 +154,122 @@
     "question": "Can I book a spa treatment?",
     "expected_tool_or_action": "search_policies",
     "expected_behavior": [
-      "Staff confirmation required; concierge cannot book. No contact destination currently configured."
+      "09:00–20:00; age 16+; IDR 650,000 per person for 60 minutes; request 24h ahead. Staff confirmation needed, no booking or configured contact destination."
     ],
     "source_ids": [
       "services-policy"
+    ]
+  },
+  {
+    "id": "family-stay",
+    "question": "We are two adults and two children aged 7 and 10, staying 1–4 November 2026. Which villa suits us?",
+    "expected_tools": [
+      "check_availability",
+      "get_villa",
+      "search_policies"
+    ],
+    "expected_behavior": [
+      "Garden Villa available all three nights, capacity four, king and two single beds. Forest Suite too small. Pool unfenced; no childproof promise."
+    ],
+    "source_ids": [
+      "family-policy"
+    ]
+  },
+  {
+    "id": "early-arrival",
+    "question": "We land at 08:00. Can we go straight to the hotel?",
+    "expected_tools": [
+      "search_policies"
+    ],
+    "expected_behavior": [
+      "Airport journey roughly 90 minutes, traffic dependent. Check-in 15:00 not guaranteed earlier. Luggage from 07:00, restaurant from 07:00, shared pool/showers from 08:00. Transfer IDR 450,000 per car each way for four passengers, request 24h ahead. No transfer confirmation."
+    ],
+    "source_ids": [
+      "stay-policy"
+    ]
+  },
+  {
+    "id": "dietary-followup",
+    "question": "One child has a nut allergy and one adult is vegan. Is breakfast on our terrace possible?",
+    "expected_tools": [
+      "search_policies"
+    ],
+    "expected_behavior": [
+      "Vegan options and plant-based milk available. Included only for eligible rate; terrace delivery IDR 150,000 per villa per morning, request by 18:00 previous day. Kitchen handles nuts; no allergen-free guarantee or claim staff notified."
+    ],
+    "source_ids": [
+      "dining-policy"
+    ],
+    "prior_messages": [
+      {
+        "role": "user",
+        "content": "We are two adults and two children aged 7 and 10, staying 1–4 November 2026."
+      }
+    ]
+  },
+  {
+    "id": "anniversary",
+    "question": "What could we arrange for our anniversary, and what would flowers and dinner cost?",
+    "expected_tools": [
+      "search_policies"
+    ],
+    "expected_behavior": [
+      "Flowers/cake IDR 600,000 per villa; dinner IDR 1,800,000 for two adults excluding drinks; combined IDR 2,400,000. Both need 48h notice and confirmation; no submitted request."
+    ],
+    "source_ids": [
+      "experiences-policy",
+      "dining-policy"
+    ]
+  },
+  {
+    "id": "alternative-stay",
+    "question": "Forest Suite is blocked 3–5 November 2026. What works for two adults instead?",
+    "expected_tools": [
+      "check_availability",
+      "get_villa"
+    ],
+    "expected_behavior": [
+      "Garden Villa matches exact dates. Forest Suite could work 1–3 November only after explicitly checking alternate dates and asking whether guest can change dates."
+    ],
+    "source_ids": []
+  },
+  {
+    "id": "late-departure",
+    "question": "Our international flight leaves at 22:00. What can we do after checkout?",
+    "expected_tools": [
+      "search_policies"
+    ],
+    "expected_behavior": [
+      "Checkout 11:00; late checkout until 14:00 costs IDR 500,000 if approved. Luggage until 22:00; shared pool/showers until 18:00. Recommend leaving at least four hours before international flight, confirm timing; no late checkout approval."
+    ],
+    "source_ids": [
+      "stay-policy"
+    ]
+  },
+  {
+    "id": "cancel-example",
+    "question": "Flexible rate, arrival 1 November 2026, cancellation on 26 October. What is the fee?",
+    "expected_tools": [
+      "search_policies"
+    ],
+    "expected_behavior": [
+      "Deadline 25 October 23:59 Asia/Makassar. One night charge; no monetary fee without nightly price. Cannot cancel booking."
+    ],
+    "source_ids": [
+      "cancellation-policy"
+    ]
+  },
+  {
+    "id": "late-checkout-request",
+    "question": "Can you change my checkout to 14:00?",
+    "expected_tools": [
+      "search_policies"
+    ],
+    "expected_behavior": [
+      "IDR 500,000 per villa if approved; request by 18:00 previous day. Explain request needs staff approval. Do not claim booking changed or request submitted."
+    ],
+    "source_ids": [
+      "stay-policy"
     ]
   }
 ]

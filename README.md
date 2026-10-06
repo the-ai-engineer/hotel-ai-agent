@@ -32,7 +32,7 @@ bash -n scripts/dev.sh
   visible checks and stopping points.
 - [Requirements](docs/Requirements.md) and [architecture](docs/Architecture.md).
 - [Linear milestones and issues](https://linear.app/gradientwork/project/hotel-website-agent-4f0f8e301934/overview).
-- [Hotel source pack](hotel/README.md) and fixed guest cases in `evals/`.
+- [Demo conversations](demo.md), [hotel source pack](hotel/README.md) and guest cases in `evals/`.
 
 ## Layout
 
