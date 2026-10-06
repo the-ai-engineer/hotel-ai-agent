@@ -9,7 +9,7 @@ requests are simulated. No working agent or cloud deployment is included yet.
 ## Run the website
 
 ```bash
-git clone git@github.com:owainlewis/hotel-ai-agent.git
+git clone git@github.com:the-ai-engineer/hotel-ai-agent.git
 cd hotel-ai-agent
 python3 -m http.server 8773 --bind 127.0.0.1 --directory code/website
 ```
@@ -28,7 +28,9 @@ node --check code/website/app.js
 
 - [Architecture diagram (PNG)](./docs/diagrams/architecture.png)
 - [Implementation design for the remaining app](./docs/hotel-agent/design.md)
-- [Earlier architecture proposal](./docs/architecture.md)
+- [Requirements](./docs/Requirements.md)
+- [Architecture](./docs/Architecture.md)
+- [Build plan in Linear](https://linear.app/gradientwork/project/hotel-website-agent-4f0f8e301934/overview)
 
 - [Scripted opening, architecture, and 30-minute outline](./LESSON.md)
 - [Saved hotel website and preview instructions](./code/README.md)

@@ -1,5 +1,7 @@
 # Sanctuary Hotel: implementation design
 
+> **Current foundations:** [Requirements](../Requirements.md) and [Architecture](../Architecture.md) are canonical. This document retains detailed contracts and checks; current deployment choices take precedence.
+
 > **Status:** Reviewed proposal; Claude approved the design, 3 October 2026. Defines the remaining application. No backend or infrastructure is implemented by this document.
 
 ## 1. Executive summary
@@ -18,7 +20,7 @@ The finished journey is: ask about breakfast, open a published policy source, su
 
 V1 covers one fictional hotel, one villa per party (a search may return several alternatives), read-only hotel tools, anonymous browser sessions and a contact link. No staff inbox, fake request submission, prices, booking creation, private guest records, WhatsApp or administrative UI.
 
-This document supersedes the implementation details in [the earlier architecture draft](../architecture.md). Its existing INV-1 through INV-6 and AC-1 through AC-8 retain their meanings below. In particular, this design replaces the earlier proposal for separate ADK database session tables and session generations with a single durable application history.
+This document supersedes the implementation details in [the earlier architecture draft](architecture-original.md). Its existing INV-1 through INV-6 and AC-1 through AC-8 retain their meanings below. In particular, this design replaces the earlier proposal for separate ADK database session tables and session generations with a single durable application history.
 
 ## 3. System context
 

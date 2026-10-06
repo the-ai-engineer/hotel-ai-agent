@@ -55,20 +55,21 @@ Do not scaffold over the existing website.
 ## Select a Google Cloud project
 
 ```text
-Help me set up a dedicated Google Cloud project for this hotel tutorial.
-Ask for my existing project ID, or help me choose a globally unique ID for a new
-project. Ask which authorized billing account and region to use. Verify the
-selected Gemini model is available in that location.
+For this recording, use the existing project personal-infrastructure-505708.
+Verify its billing, enabled APIs and existing resources. Preserve unrelated
+workloads and use hotel-prefixed resources. Check europe-west2 for the application
+and verify the selected Gemini model endpoint separately.
 
 Create or reuse a named gcloud configuration for this tutorial without changing
-unrelated configurations. If the project is new, create it before selecting it.
+unrelated configurations. Do not create a new project for this recording.
 Guide me through browser sign-in. Show the exact project and billing account
-before linking billing or provisioning billable resources.
+before changing billing or provisioning billable resources.
 
 Verify the selected project and billing state. Help me configure a budget alert
 and notification recipient using a budget I choose. Explain that a budget alert
 does not stop spending. Separate projects help track client costs; they do not
-automatically create separate billing accounts or invoices.
+automatically create separate billing accounts or invoices. This recording uses
+a shared project, so it does not provide full per-client project isolation.
 ```
 
 **Check:** the intended project is selected, billing is verified and the budget notification is configured.
@@ -122,7 +123,7 @@ Paste the [implementation prompt](prompts.md). It asks the assistant to preserve
 ## Complete the local hotel workflow
 
 ```text
-Read docs/architecture.md and inspect what is implemented. Continue the local
+Read docs/Architecture.md and inspect what is implemented. Continue the local
 hotel workflow in small, checked steps, preserving the Sanctuary Hotel design.
 
 Add get_villa and deterministic check_availability tools over fictional inventory
@@ -145,7 +146,7 @@ run and test commands that work. Do not deploy yet.
 ## Deploy the checked application
 
 ```text
-Read docs/architecture.md and inspect the completed local application and tests.
+Read docs/Architecture.md and inspect the completed local application and tests.
 Prepare deployment only if the local checks pass. Package the static frontend
 and FastAPI/ADK backend into one container for Cloud Run.
 

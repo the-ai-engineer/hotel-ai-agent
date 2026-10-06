@@ -1,7 +1,7 @@
 # First implementation prompt
 
 ```text
-Read docs/architecture.md and repository instructions. The design uses one Cloud
+Read docs/Architecture.md and repository instructions. The design uses one Cloud
 Run service with static frontend and a FastAPI/Google ADK backend, Gemini through
 Vertex AI, SSE and PostgreSQL. Implement only the first working local slice.
 

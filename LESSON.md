@@ -46,7 +46,7 @@ Cloud Run, ADK, Gemini through Vertex AI and PostgreSQL. No payments, reservatio
 
 ![Proposed Google Cloud architecture](docs/diagrams/architecture.png)
 
-See the [full design](docs/architecture.md) for tool contracts, sessions and failure handling.
+See the [full design](docs/Architecture.md) for tool contracts, sessions and failure handling.
 
 - One Cloud Run service serves the static frontend, FastAPI API and ADK agent. Keep frontend/ and backend/ as separate source folders.
 
@@ -72,7 +72,7 @@ Use the paste-ready prompts in the [setup guide](resources/setup-guide.md).
 
 - Install and check Python, uv, Node, gcloud and Agents CLI.
 
-- Create a dedicated project, link billing, choose a region and set a budget alert. Explain per-client project cost tracking.
+- Reuse `personal-infrastructure-505708`, verify billing, choose the application/model locations and set a budget alert. Preserve other workloads. Explain that separate client projects improve cost tracking; this demo uses a shared project.
 
 - Configure local Application Default Credentials, enable the model API and verify Gemini access.
 
