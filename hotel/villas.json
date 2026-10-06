@@ -11,7 +11,11 @@
       "Private pool",
       "Covered terrace",
       "Wi-Fi"
-    ]
+    ],
+    "beds": [
+      "1 king bed"
+    ],
+    "pool_fenced": false
   },
   {
     "id": "garden-villa",
@@ -25,6 +29,11 @@
       "Private pool",
       "Garden terrace",
       "Wi-Fi"
-    ]
+    ],
+    "beds": [
+      "1 king bed",
+      "2 single beds"
+    ],
+    "pool_fenced": false
   }
 ]

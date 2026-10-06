@@ -94,6 +94,8 @@ Store guest sessions, owned conversations, immutable turn attempts, published do
 
 Use parameterized SQL. Missing inventory nights are unavailable; checkout is exclusive; blocking bookings and closed nights remove a villa. Validate dates, stay length and party size before lookup. The availability tool checks the fixture horizon and reports missing dates as unknown. The property timezone is `Asia/Makassar`.
 
+Markdown is the reviewed source pack, not a runtime filesystem search. An explicit importer writes document metadata and sections to PostgreSQL; full-text search ranks published passages across documents. The agent chooses and refines query terms, and results include title, document ID and versioned evidence. No separate Markdown index document or embedding service is required. Re-import changed content atomically, retiring old active sections while preserving cited versions. A future wiki connector can use this import boundary; no wiki sync is implemented here.
+
 The model explains evidence and chooses tools. It cannot write bookings, run arbitrary SQL or determine authorization. Cards come from validated tool results, not generated HTML. Render model/user text as text; allow only approved source and image URLs. Add semantic retrieval only if evaluation identifies a problem full-text search cannot reasonably solve.
 
 ## Ownership, retries and failure
