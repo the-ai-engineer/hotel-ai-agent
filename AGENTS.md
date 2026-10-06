@@ -4,7 +4,7 @@ Build the fictional Sanctuary Hotel concierge. Keep code simple and explainable.
 
 ## References
 
-Read [README](README.md), [requirements](docs/Requirements.md),
+Before proposing or coding, read [README](README.md), [requirements](docs/Requirements.md),
 [architecture](docs/Architecture.md), [hotel sources](hotel/README.md),
 [guest cases](evals/guest-questions.json) and [recording guide](resources/recording-guide.md).
 Inspect implementation before claiming features exist.
@@ -24,7 +24,7 @@ Never merge it wholesale or present reused code as newly written.
 - One vertical slice at a time. State issue, outcome, acceptance criteria and
   checks before coding. During filming, wait for “recording ready”. Finish and
   verify the slice; build later slices only when requested.
-- Use Google Agents CLI skills for development, evaluation and deployment;
+- Use Google Agents CLI and its installed skills for development, evaluation and deployment;
   gcloud for cloud configuration and inspection. Check CLI help, model IDs and access.
 - Show short prompts, key commands, code and results without an IDE walkthrough.
   Log successful commands, versions and evidence in `resources/build-log.md`.
