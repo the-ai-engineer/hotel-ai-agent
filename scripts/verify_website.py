@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 from urllib.parse import urlsplit
 
-ROOT = Path(__file__).resolve().parent / 'website'
+ROOT = Path(__file__).resolve().parents[1] / 'frontend'
 
 
 class References(HTMLParser):
@@ -23,7 +23,7 @@ class References(HTMLParser):
 def main():
     page = References()
     page.feed((ROOT / 'index.html').read_text())
-    urls = page.urls + re.findall(r"['\"](assets/[^'\"]+)['\"]", (ROOT / 'app.js').read_text())
+    urls = page.urls + re.findall(r"['\"](assets/[^'\"]+)['\"]", '\n'.join(path.read_text() for path in (ROOT / 'js').glob('*.js')))
     failures = []
     for url in urls:
         parsed = urlsplit(url)

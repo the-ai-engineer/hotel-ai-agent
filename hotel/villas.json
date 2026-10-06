@@ -1,0 +1,18 @@
+[
+  {
+    "id": "forest-suite",
+    "name": "Forest Suite",
+    "capacity": 2,
+    "bedrooms": 1,
+    "private_pool": true,
+    "image": "assets/suite.png"
+  },
+  {
+    "id": "garden-villa",
+    "name": "Garden Villa",
+    "capacity": 4,
+    "bedrooms": 2,
+    "private_pool": true,
+    "image": "assets/bedroom-daylight.png"
+  }
+]

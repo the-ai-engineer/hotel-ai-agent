@@ -1,0 +1,88 @@
+{
+  "inventory_days": [
+    {
+      "villa_id": "forest-suite",
+      "night": "2026-11-01",
+      "open": true
+    },
+    {
+      "villa_id": "forest-suite",
+      "night": "2026-11-02",
+      "open": true
+    },
+    {
+      "villa_id": "forest-suite",
+      "night": "2026-11-03",
+      "open": true
+    },
+    {
+      "villa_id": "forest-suite",
+      "night": "2026-11-04",
+      "open": true
+    },
+    {
+      "villa_id": "forest-suite",
+      "night": "2026-11-05",
+      "open": true
+    },
+    {
+      "villa_id": "forest-suite",
+      "night": "2026-11-06",
+      "open": true
+    },
+    {
+      "villa_id": "forest-suite",
+      "night": "2026-11-07",
+      "open": true
+    },
+    {
+      "villa_id": "garden-villa",
+      "night": "2026-11-01",
+      "open": true
+    },
+    {
+      "villa_id": "garden-villa",
+      "night": "2026-11-02",
+      "open": true
+    },
+    {
+      "villa_id": "garden-villa",
+      "night": "2026-11-03",
+      "open": true
+    },
+    {
+      "villa_id": "garden-villa",
+      "night": "2026-11-04",
+      "open": true
+    },
+    {
+      "villa_id": "garden-villa",
+      "night": "2026-11-05",
+      "open": false
+    },
+    {
+      "villa_id": "garden-villa",
+      "night": "2026-11-06",
+      "open": true
+    },
+    {
+      "villa_id": "garden-villa",
+      "night": "2026-11-07",
+      "open": true
+    }
+  ],
+  "bookings": [
+    {
+      "villa_id": "forest-suite",
+      "check_in": "2026-11-03",
+      "check_out": "2026-11-05",
+      "status": "confirmed"
+    },
+    {
+      "villa_id": "garden-villa",
+      "check_in": "2026-11-02",
+      "check_out": "2026-11-04",
+      "status": "cancelled"
+    }
+  ]
+}

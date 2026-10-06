@@ -6,7 +6,7 @@ Canonical product scope, 6 October 2026. [Architecture](Architecture.md) defines
 
 Visitors should find reliable answers and suitable accommodation without waiting for hotel staff. Staff should spend less time answering repeated questions. These are intended benefits to validate with a real hotel, not measured results of this demo.
 
-Keep the existing Sanctuary Hotel website. Replace its simulated concierge with a real ADK agent. The demo uses fictional published policies, villas and occupancy in PostgreSQL. It checks availability but never creates a booking.
+Keep the existing Sanctuary Hotel website. Connect its disabled concierge preview to a real ADK agent. The demo uses fictional published policies, villas and occupancy in PostgreSQL. It checks availability but never creates a booking.
 
 ## Finished guest journey
 

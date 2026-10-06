@@ -1,42 +1,50 @@
 # Hotel AI Agent
 
-A planned tutorial about adding an AI support widget to a fictional hotel website,
-then deploying, testing, and operating it on Google Cloud.
+The recording starting point for adding an AI concierge to Sanctuary Hotel,
+a fictional luxury forest retreat.
 
-**Status:** runnable website prototype and draft lesson. Concierge replies and
-requests are simulated. No working agent or cloud deployment is included yet.
+**Status:** static website and chat widget only. The widget opens and closes,
+but replies are disabled. No backend, agent, database or cloud deployment is
+included in this starting version. The generated photography and fading hero
+video are preserved.
 
-## Run the website
-
-```bash
-git clone git@github.com:the-ai-engineer/hotel-ai-agent.git
-cd hotel-ai-agent
-python3 -m http.server 8773 --bind 127.0.0.1 --directory code/website
-```
-
-Open http://127.0.0.1:8773/. The fictional property is Sanctuary Hotel,
-Luxury Forest Retreat.
-
-## Check
+## Start recording here
 
 ```bash
-python3 code/verify_website.py
-node --check code/website/app.js
+bash scripts/dev.sh
 ```
 
-## Start Here
+Open http://127.0.0.1:8773/. Python 3 is the only runtime requirement for the
+starting website. Node is used for JavaScript syntax checks.
 
-- [Architecture diagram (PNG)](./docs/diagrams/architecture.png)
-- [Implementation design for the remaining app](./docs/hotel-agent/design.md)
-- [Requirements](./docs/Requirements.md)
-- [Architecture](./docs/Architecture.md)
-- [Build plan in Linear](https://linear.app/gradientwork/project/hotel-website-agent-4f0f8e301934/overview)
+## Checks
 
-- [Scripted opening, architecture, and 30-minute outline](./LESSON.md)
-- [Saved hotel website and preview instructions](./code/README.md)
-- [Step-by-step CLI setup and build guide](./resources/setup-guide.md)
-- [Implementation prompt](./resources/prompts.md)
+```bash
+python3 scripts/verify_website.py
+node --check frontend/js/site.js
+node --check frontend/js/chat.js
+bash -n scripts/dev.sh
+```
 
-## Go Deeper
+## Recording and build references
+
+- [Recording guide](resources/recording-guide.md): ordered sections, short prompts,
+  visible checks and stopping points.
+- [Requirements](docs/Requirements.md) and [architecture](docs/Architecture.md).
+- [Linear milestones and issues](https://linear.app/gradientwork/project/hotel-website-agent-4f0f8e301934/overview).
+- [Hotel source pack](hotel/README.md) and fixed guest cases in `evals/`.
+
+## Layout
+
+- `frontend/`: HTML, CSS, site/widget JavaScript and generated assets.
+- `scripts/`: start and check the saved website.
+- `docs/`: the planned product and architecture.
+- `hotel/`: fictional policies and structured inventory.
+- `evals/`: guest questions and expected behavior.
+- `resources/`: the recording guide and short build prompts.
+
+The original agent implementation is preserved on the private branch
+`codex/agent-build-backup-20261006`, commit `09906ee`. It is an unfinished
+reference, not the filming baseline. Do not merge it wholesale during recording.
 
 For more on building real AI systems, join [AI Engineer](https://aiengineer.co).
