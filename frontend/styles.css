@@ -12,3 +12,8 @@ header{justify-content:flex-start;gap:30px;padding:0 6%}header .brand{position:s
 .menu-open #menuButton span{background:var(--ink)}
 #menu{padding-top:155px;overflow-y:auto}
 @media(max-width:600px){#menu{padding-top:135px}}
+
+.hero-playback{position:absolute;left:9%;bottom:64px;z-index:2;min-height:44px;padding:10px 16px;border:1px solid #ffffff70;border-radius:2px;background:#18231bd9;color:#fff;font-size:12px;font-weight:400;letter-spacing:.5px}
+.hero-playback:hover{background:#18231b}
+.hero-playback:focus-visible{outline:2px solid #fff;outline-offset:4px}
+@media(max-width:600px){.hero-playback{left:27px}}
