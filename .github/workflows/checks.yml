@@ -1,0 +1,30 @@
+name: Checks
+on: [push, pull_request]
+jobs:
+  policy-agent:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: hotel
+          POSTGRES_PASSWORD: hotel
+          POSTGRES_DB: hotel_policy
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U hotel -d hotel_policy"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://hotel:hotel@127.0.0.1:5432/hotel_policy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+      - run: uv sync --locked --directory backend
+      - run: uv run --directory backend ruff check app tests
+      - run: uv run --directory backend pytest -q
+      - run: python3 scripts/verify_website.py
+      - run: node --check frontend/js/chat.js
+      - run: node --check frontend/js/site.js
+      - run: node frontend/tests/chat.test.cjs
