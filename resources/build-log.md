@@ -150,7 +150,7 @@ python3 scripts/verify_website.py
 git diff --check
 ```
 
-48 backend tests pass, including 12 recovery tests. The two-process HTTP exercise
+49 backend tests pass, including 13 recovery tests. The two-process HTTP exercise
 observes 20 running turns concurrently, isolated history and durable replay. Other
 checks cover foreign access, current-conversation scope, running duplicates,
 competing attempts, Stop, process kill, deadline expiry, rejected final writes,
@@ -169,3 +169,9 @@ failure. Fixed with durable-state-specific cancellation and safe producer
 termination; regressions reproduce both cases. Cross-process Stop now returns a
 clean SSE error and a one-slot process accepts another turn afterward. Independent
 final review approved.
+
+The final slow-client regression reproduces cancellation while SSE delivery is
+blocked. The locked AnyIO version correctly ends the request and frees the slot,
+but the model producer was left suspended. Explicitly closing both iterators in
+shielded response cleanup fixes producer finalization; the retained test asserts
+request completion, zero held slots and execution of the producer cleanup.

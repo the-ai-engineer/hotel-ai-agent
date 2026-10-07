@@ -529,3 +529,65 @@ async def test_expired_rate_counters_are_pruned(pool):
             await conn.fetchval("SELECT used FROM rate_counters WHERE scope='live'")
             == 1
         )
+
+
+async def test_remote_stop_releases_slot_while_sse_send_is_backpressured(client):
+    await start(client)
+    turn_id = uuid.uuid4()
+    body = json.dumps({"turn_id": str(turn_id), "message": "backpressure"}).encode()
+    requested = False
+    text_sent = asyncio.Event()
+    model_closed = asyncio.Event()
+
+    async def producer(*args, **kwargs):
+        try:
+            yield {"type": "text", "text": "Partial"}
+            await asyncio.Event().wait()
+        finally:
+            model_closed.set()
+
+    client.app.state.answer = producer
+
+    async def receive():
+        nonlocal requested
+        if not requested:
+            requested = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        await asyncio.Event().wait()
+
+    async def send(message):
+        if b"event: text" in message.get("body", b""):
+            text_sent.set()
+            await asyncio.Event().wait()
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": "2.3"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/api/chat",
+        "raw_path": b"/api/chat",
+        "query_string": b"",
+        "root_path": "",
+        "server": ("127.0.0.1", 8773),
+        "client": ("127.0.0.1", 10000),
+        "headers": [
+            (b"origin", ORIGIN["Origin"].encode()),
+            (b"content-type", b"application/json"),
+            (b"cookie", f"hotel_session={client.cookies['hotel_session']}".encode()),
+        ],
+    }
+    running = asyncio.create_task(client.app(scope, receive, send))
+    try:
+        await asyncio.wait_for(text_sent.wait(), 2)
+        assert (await client.post(f"/api/turns/{turn_id}/stop", headers=ORIGIN)).json()[
+            "status"
+        ] == "interrupted"
+        await asyncio.wait_for(running, 2)
+        assert client.app.state.model_admission.active == 0
+        await asyncio.wait_for(model_closed.wait(), 2)
+    finally:
+        if not running.done():
+            running.cancel()
+        await asyncio.gather(running, return_exceptions=True)

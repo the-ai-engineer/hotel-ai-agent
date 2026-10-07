@@ -338,6 +338,7 @@ def create_app(settings=None):
         completed = False
         failure_status = "interrupted"
         stopped_remotely = False
+        producer = None
 
         async def watch_stop(task):
             nonlocal stopped_remotely, failure_status
@@ -368,7 +369,7 @@ def create_app(settings=None):
                 task.cancel()
 
         async def stream():
-            nonlocal completed, failure_status
+            nonlocal completed, failure_status, producer
             watcher = None
             try:
                 watcher = asyncio.create_task(
@@ -389,13 +390,14 @@ def create_app(settings=None):
                 )
                 async with asyncio.timeout(remaining):
                     final = None
-                    async for item in app.state.answer(
+                    producer = app.state.answer(
                         app.state.pool,
                         settings,
                         context,
                         question.message,
                         guest={"session_hash": key, "conversation_id": str(acquired)},
-                    ):
+                    )
+                    async for item in producer:
                         if item["type"] == "text":
                             yield event("text", {"text": item["text"]})
                         elif item["type"] == "result":
@@ -466,8 +468,13 @@ def create_app(settings=None):
                     await super().__call__(scope, receive, send)
                 finally:
                     try:
-                        if not completed:
-                            with anyio.CancelScope(shield=True), anyio.fail_after(7):
+                        with anyio.CancelScope(shield=True), anyio.fail_after(7):
+                            # Cancellation can land in send(), outside the generator.
+                            # Close both suspended iterators before releasing admission.
+                            await self.body_iterator.aclose()
+                            if producer is not None:
+                                await producer.aclose()
+                            if not completed:
                                 await turns.interrupt(
                                     app.state.pool,
                                     key,
