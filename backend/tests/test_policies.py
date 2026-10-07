@@ -4,13 +4,13 @@ from pathlib import Path
 import pytest
 
 from app.seed import import_policies
-from app.tools import PolicyTools
+from app.tools import HotelTools
 
 SOURCE = Path(__file__).resolve().parents[2] / "hotel"
 
 
 async def test_catalogue_body_and_budget(pool):
-    tools = PolicyTools(pool)
+    tools = HotelTools(pool)
     assert (await tools.read_document("dining-policy", 2))["error"] == "not_listed"
     catalogue = (await tools.list_documents())["documents"]
     assert len(catalogue) == 6
@@ -27,7 +27,7 @@ async def test_catalogue_body_and_budget(pool):
 async def test_atomic_import_pins_and_withdrawal(pool, tmp_path):
     shutil.copytree(SOURCE, tmp_path / "hotel")
     source = tmp_path / "hotel"
-    tools = PolicyTools(pool)
+    tools = HotelTools(pool)
     await tools.list_documents()
     path = source / "policies/dining.md"
     original = path.read_text()
@@ -36,7 +36,7 @@ async def test_atomic_import_pins_and_withdrawal(pool, tmp_path):
     )
     await import_policies(pool, source)
     assert "10:30" in (await tools.read_document("dining-policy", 2))["body"]
-    new = PolicyTools(pool)
+    new = HotelTools(pool)
     assert (
         next(
             d
@@ -56,7 +56,7 @@ async def test_atomic_import_pins_and_withdrawal(pool, tmp_path):
         "error"
     ] == "missing_evidence"
     assert "dining-policy" not in [
-        d["id"] for d in (await PolicyTools(pool).list_documents())["documents"]
+        d["id"] for d in (await HotelTools(pool).list_documents())["documents"]
     ]
 
 
@@ -81,7 +81,7 @@ async def test_reject_oversized_and_changed_revision_without_partial_import(
 
 
 async def test_four_complete_documents_not_truncated(pool):
-    tools = PolicyTools(pool)
+    tools = HotelTools(pool)
     catalogue = (await tools.list_documents())["documents"]
     for doc in catalogue[:4]:
         result = await tools.read_document(doc["id"], doc["revision"])
@@ -92,6 +92,6 @@ async def test_four_complete_documents_not_truncated(pool):
 
 
 async def test_missing_id_is_not_exposed(pool):
-    tools = PolicyTools(pool)
+    tools = HotelTools(pool)
     await tools.list_documents()
     assert (await tools.read_document("private-staff", 1))["error"] == "not_listed"

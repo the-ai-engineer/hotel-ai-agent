@@ -35,3 +35,7 @@ A late-checkout request could be a separate write-tool feature: verify the guest
 ## Design explanation
 
 Policy answers use `list_documents` to inspect titles, summaries and keywords, then `read_document` for complete published bodies with versioned sources. Show the selected document IDs and reads. Multi-part questions may need several documents; summaries alone cannot support an answer. `get_villa` supplies public facts and `check_availability` computes every night. No keyword/full-text or vector search is used in this version. Service opening hours never prove service slots are available.
+
+## Reset between takes
+
+Use **New conversation → Start new** before a fresh demo. **Keep this chat** cancels the reset. Refresh keeps the new conversation empty; closing the widget preserves it. This starts fresh context, it does not delete stored records.

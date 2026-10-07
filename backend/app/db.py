@@ -43,10 +43,12 @@ async def command():
             await migrate(pool)
             print("Migrations applied.")
         elif sys.argv[1:] == ["seed"]:
+            from app.inventory import import_inventory
             from app.seed import import_policies
 
             await import_policies(pool, Path(__file__).resolve().parents[2] / "hotel")
-            print("Hotel policies imported.")
+            await import_inventory(pool, Path(__file__).resolve().parents[2] / "hotel")
+            print("Hotel policies and fictional inventory imported.")
         else:
             raise SystemExit("Usage: python -m app.db migrate|seed")
     finally:

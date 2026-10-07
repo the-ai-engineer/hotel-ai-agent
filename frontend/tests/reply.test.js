@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+
+const dom = new JSDOM('<div id="reply"></div>');
+globalThis.window = dom.window;
+const { renderReply, streamReply } = await import('../js/reply.js');
+const node = window.document.querySelector('#reply');
+renderReply(node, '**Garden Villa**\n\n- Two bedrooms\n- Private pool');
+assert.equal(node.querySelector('strong').textContent, 'Garden Villa');
+assert.equal(node.querySelectorAll('li').length, 2);
+renderReply(node, '<script>alert(1)</script><img src=x onerror=alert(1)>[click](javascript:alert(1)) <a href="https://evil.example">external</a>');
+assert.equal(node.querySelector('script,img,a'), null);
+assert.equal(node.querySelector('[href],[src],[onerror]'), null);
+
+let renders = 0;
+const stream = streamReply(node, () => renders++);
+stream.update('First');
+stream.update('**Latest**');
+assert.equal(renders, 0);
+await new Promise(resolve => setTimeout(resolve, 130));
+assert.equal(renders, 1);
+assert.equal(node.querySelector('strong').textContent, 'Latest');
+stream.update('Stale partial');
+stream.finish('**Saved**');
+await new Promise(resolve => setTimeout(resolve, 130));
+assert.equal(renders, 2);
+assert.equal(node.querySelector('strong').textContent, 'Saved');
+stream.update('Cancelled');
+stream.cancel();
+await new Promise(resolve => setTimeout(resolve, 130));
+assert.equal(renders, 2);
+console.log('Markdown safety, batched streaming and final flush passed.');

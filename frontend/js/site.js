@@ -16,3 +16,7 @@ reducedMotion.addEventListener('change', event => {
   else playHero();
 });
 if (!reducedMotion.matches) playHero();
+
+// A concierge result opens the matching villa in the existing showcase.
+const requestedVilla = new URLSearchParams(window.location.search).get('villa');
+if (requestedVilla === 'garden-villa') villaStep(1);

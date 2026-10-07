@@ -242,3 +242,76 @@ async def test_disconnect_before_stream_starts_releases_admission(client, pool):
             == "interrupted"
         )
         assert await conn.fetchval("SELECT active_turn FROM guest_sessions") is None
+
+
+async def test_new_conversation_clears_context_and_survives_refresh_without_deletion(
+    client, pool
+):
+    await start(client)
+    calls = []
+
+    async def success(pool, settings, history, question):
+        calls.append(history)
+        yield {"type": "result", "answer": "Saved reply", "sources": []}
+
+    client.app.state.answer = success
+    await client.post(
+        "/api/chat",
+        headers=ORIGIN,
+        json={"turn_id": str(uuid.uuid4()), "message": "First conversation"},
+    )
+    cookie = client.cookies["hotel_session"]
+    assert (await client.get("/api/history")).json()["turns"]
+    assert (await client.post("/api/conversation", headers=ORIGIN)).status_code == 200
+    assert client.cookies["hotel_session"] == cookie
+    assert (await client.get("/api/history")).json()["turns"] == []
+    async with pool.acquire() as conn:
+        assert await conn.fetchval("SELECT count(*) FROM turns") == 1
+    await client.post(
+        "/api/chat",
+        headers=ORIGIN,
+        json={"turn_id": str(uuid.uuid4()), "message": "Fresh conversation"},
+    )
+    assert calls == [[], []]
+    assert len((await client.get("/api/history")).json()["turns"]) == 1
+
+
+async def test_new_conversation_respects_origin_owner_and_active_turn(client, pool):
+    assert (await client.post("/api/conversation", headers=ORIGIN)).status_code == 401
+    await start(client)
+    assert (
+        await client.post(
+            "/api/conversation", headers={"Origin": "https://evil.example"}
+        )
+    ).status_code == 403
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE guest_sessions SET busy_until=now()+interval '1 minute'"
+        )
+    assert (await client.post("/api/conversation", headers=ORIGIN)).status_code == 409
+
+
+async def test_availability_result_is_saved_in_history(client, pool):
+    from app.inventory import check_availability
+
+    await start(client)
+    availability = await check_availability(pool, "2026-11-01", "2026-11-04", 4)
+
+    async def success(pool, settings, history, question):
+        yield {
+            "type": "result",
+            "answer": "Garden Villa is available.",
+            "sources": [],
+            "availability": availability,
+        }
+
+    client.app.state.answer = success
+    response = await client.post(
+        "/api/chat",
+        headers=ORIGIN,
+        json={"turn_id": str(uuid.uuid4()), "message": "Which villa for four?"},
+    )
+    assert "event: done" in response.text
+    saved = (await client.get("/api/history")).json()["turns"][0]["availability"]
+    assert saved == availability
+    assert [villa["id"] for villa in saved["cards"]] == ["garden-villa"]

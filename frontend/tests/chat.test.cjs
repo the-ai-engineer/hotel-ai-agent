@@ -9,12 +9,14 @@ class Node {
   append(node) { this.children.push(node); node.parent = this; }
   replaceChildren() { this.children = []; }
   focus() {}
+  setAttribute() {}
   addEventListener(name, handler) { this.handlers[name] = handler; }
-  querySelector() { return nodes.send; }
+  querySelector(selector) { return selector === '.concierge-text' ? this.children[0] : nodes.send; }
   remove() { this.parent.children = this.parent.children.filter((node) => node !== this); }
 }
-const names = ['chat', 'launch', 'closeChat', 'question', 'chatForm', 'messages', 'chatContent', 'stopAnswer', 'send'];
+const names = ['chat', 'launch', 'closeChat', 'question', 'chatForm', 'messages', 'chatContent', 'stopAnswer', 'send', 'chatWelcome', 'newConversation', 'resetConfirm', 'cancelReset', 'confirmReset'];
 const nodes = Object.fromEntries(names.map((name) => [name, new Node()]));
+nodes.resetConfirm.hidden = true;
 const pending = [];
 const context = vm.createContext({
   document: {
@@ -24,8 +26,10 @@ const context = vm.createContext({
   },
   fetch: (path) => new Promise((resolve) => pending.push({ path, resolve })),
   AbortController, TextDecoder, crypto: webcrypto,
+  renderReply: (node, text) => { node.textContent = text; },
+  streamReply: (node) => ({ update(text) { node.textContent = text; }, finish(text) { node.textContent = text; }, cancel() {} }),
 });
-vm.runInContext(readFileSync('frontend/js/chat.js', 'utf8'), context);
+vm.runInContext(readFileSync('frontend/js/chat.js', 'utf8').replace(/^import .*;\n/, ''), context);
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
 (async () => {
@@ -52,7 +56,7 @@ const tick = () => new Promise((resolve) => setImmediate(resolve));
   }) } });
   await Promise.all([opened, submitted]);
   assert.equal(nodes.messages.children.length, 2);
-  assert.equal(nodes.messages.children[1].textContent, 'Breakfast included');
+  assert.equal(nodes.messages.children[1].children[0].textContent, 'Breakfast included');
   assert.equal(cancelled, true);
   assert.equal(released, true);
   console.log('Chat initialization race regression passed.');

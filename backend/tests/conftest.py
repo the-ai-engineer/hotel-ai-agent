@@ -7,6 +7,7 @@ import httpx
 import pytest_asyncio
 
 from app.db import migrate
+from app.inventory import import_inventory
 from app.seed import import_policies
 from app.settings import Settings
 
@@ -27,6 +28,7 @@ async def pool():
     try:
         await migrate(pool)
         await import_policies(pool, Path(__file__).resolve().parents[2] / "hotel")
+        await import_inventory(pool, Path(__file__).resolve().parents[2] / "hotel")
         yield pool
     finally:
         await pool.close()
