@@ -310,13 +310,17 @@ async def test_running_duplicate_competing_turn_cross_process_stop_and_shared_bu
             assert await conn.fetchval("SELECT count(*) FROM turns") == 2
             assert (
                 await conn.fetchval(
-                    "SELECT used FROM rate_counters WHERE scope='turn-session:'||$1",
+                    "SELECT sum(used) FROM rate_counters WHERE scope='turn-session:'||$1",
                     token_hash(first.cookies["hotel_session"]),
                 )
                 == 2
             )
+            # Cover both buckets so this test can cross a wall-clock minute.
             await conn.execute(
-                "UPDATE rate_counters SET used=100 WHERE scope='turn-property-minute'"
+                """INSERT INTO rate_counters(scope,bucket,used,expires_at)
+                SELECT 'turn-property-minute',date_trunc('minute',now())+n*interval '1 minute',
+                       100,now()+interval '3 minutes' FROM generate_series(0,1) n
+                ON CONFLICT(scope,bucket) DO UPDATE SET used=100,expires_at=EXCLUDED.expires_at"""
             )
         rejected = await first.post(
             "/api/chat",
