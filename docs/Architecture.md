@@ -4,7 +4,7 @@ Canonical build direction, 6 October 2026. Read [Requirements](Requirements.md) 
 
 ## Current state
 
-The first policy slice connects the static website to FastAPI, an isolated ADK invocation and local PostgreSQL. Villa tools, full turn recovery, abuse limits and deployment remain planned. Earlier unfinished implementations were not reused.
+The first policy slice connects the static website to FastAPI, an isolated ADK invocation and local PostgreSQL. Villa pages, availability, guest-confirmed demo reservations and owned hotel notes are implemented locally. Full turn recovery, abuse limits and deployment remain planned. Earlier unfinished implementations were not reused.
 
 ## Runtime diagram
 
@@ -95,7 +95,7 @@ Store guest sessions, owned conversations, immutable turn attempts, published do
 
 Use parameterized SQL. Missing inventory nights are unavailable; checkout is exclusive; blocking bookings and closed nights remove a villa. Validate dates, stay length and party size before lookup. The availability tool checks the fixture horizon and reports missing dates as unknown. The property timezone is `Asia/Makassar`.
 
-Markdown policies and `hotel/catalogue.json` are the reviewed source pack. An explicit importer stores the catalogue metadata and complete document bodies in PostgreSQL. The six short documents use catalogue selection, not keyword/full-text or vector search. The agent calls `list_documents`, reads relevant documents by ID and revision, and may read several for a combined question. Summaries guide selection; only read bodies and villa tool results support factual answers. Never expose filesystem paths or let the agent run arbitrary SQL.
+Markdown policies and `hotel/catalogue.json` are the reviewed source pack. An explicit importer stores the catalogue metadata and complete document bodies in PostgreSQL. The seven short documents use catalogue selection, not keyword/full-text or vector search. The agent calls `list_documents`, reads relevant documents by ID and revision, and may read several for a combined question. Summaries guide selection; only read bodies and villa tool results support factual answers. Never expose filesystem paths or let the agent run arbitrary SQL.
 
 A read accepts only a published ID/revision. Unknown, unavailable or unpublished documents produce a structured missing-evidence response, not a guessed answer. Pin the listed revision when reading so an update cannot silently switch the evidence. Public source URLs serve the same published version used by the answer.
 
@@ -103,7 +103,7 @@ Re-import updates atomically: publish the new body and metadata together, retain
 
 Keep a complete catalogue rather than silently truncating entries. Initial import limits: at most 20 published documents, at most 6,000 characters of catalogue JSON returned to the model, and 6,000 characters per complete body. Reject oversized input with an actionable authoring error; do not cut off conditions. Document summaries and keywords are reviewed metadata, not automatically inferred at request time. Reconsider indexed search if corpus size or evaluations outgrow these limits.
 
-The model explains evidence and chooses tools. It cannot write bookings, run arbitrary SQL or determine authorization. Cards come from validated tool results, not generated HTML. Render model/user text as text; allow only approved source and image URLs. Evaluate document selection, cross-document reasoning and answer grounding separately.
+The model explains evidence and chooses tools. It cannot write bookings, run arbitrary SQL or determine authorization. Cards come from validated tool results, not generated HTML. Render model text through a restricted Markdown sanitizer and guest text literally; allow only approved source and image URLs. Evaluate document selection, cross-document reasoning and answer grounding separately.
 
 ## Ownership, retries and failure
 
@@ -143,7 +143,7 @@ Log request/turn IDs, safe outcomes, tool durations, model usage and error codes
 
 Use project `personal-infrastructure-505708`. Provision hotel-prefixed resources; preserve other applications. Initial application/SQL region: `europe-west2`, subject to checking service availability. Select and verify the Gemini model endpoint independently; the application region need not equal the model location. Record the tested model ID rather than claiming an unverified latest model.
 
-Use local ADC for development and a least-privilege Cloud Run identity in deployment. Separate application and migration/seed DB permissions. Runtime writes are limited to session/turn/rate data; hotel data is read-only. Credentials stay in Secret Manager and outside Git.
+Use local ADC for development and a least-privilege Cloud Run identity in deployment. Separate application and migration/seed DB permissions. Runtime writes cover sessions, turns, rate limits, owned demo reservations and guest-confirmed hotel notes. Policy and villa catalogues are read-only at runtime. Credentials stay in Secret Manager and outside Git.
 
 Release: checks and evals, immutable image, explicit migration job, explicit demo seed, Cloud Run revision, deployed SSE/ownership smoke tests. Never seed on startup. Keep migrations compatible with rollback. Keep the demo IAM-restricted until public abuse checks pass. No paid provisioning or capacity test is implied by writing this design.
 
@@ -178,3 +178,9 @@ Ordered SQL migrations run under a transaction and advisory lock with a schema v
 ### Villa detail pages
 
 The website has public `/villas/{id}` detail routes, served by the same Cloud Run application using one static template. `/api/villas/{id}` returns validated, read-only PostgreSQL villa facts. Unknown IDs return 404. Cards and homepage actions link to these pages. Root-relative assets and the same host-only guest cookie keep the concierge and saved conversation consistent across navigation.
+
+### Demo booking and request boundary
+
+Availability cards link to a normal booking page. Only its guest confirmation POST can create a fictional reservation. The service locks the request UUID, then the villa, rechecks full-stay availability and capacity, and saves an idempotent owned reservation. The model has no booking-write tool. References are not authentication: lookups also require the current guest cookie. The current property date is passed into every agent invocation; the inventory fixture has a reviewed one-year horizon.
+
+`lookup_booking` reads only this guest's reservation. `prepare_hotel_request` prepares one plain-text note per turn. The completed-answer transaction persists that draft and supersedes earlier unsent drafts. A same-origin Send request POST locks the guest session then the draft, validates current conversation, completed turn and expiry, and records Pending hotel review. It does not change the reservation or notify external staff. Seed import shares villa locks and preserves guest-created reservations. See [booking spec](bookings/spec.md).

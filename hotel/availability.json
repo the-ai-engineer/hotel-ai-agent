@@ -84,5 +84,9 @@
       "check_out": "2026-11-04",
       "status": "cancelled"
     }
-  ]
+  ],
+  "horizon": {
+    "start": "2026-10-01",
+    "end": "2027-10-01"
+  }
 }

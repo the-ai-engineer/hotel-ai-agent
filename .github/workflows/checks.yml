@@ -33,4 +33,5 @@ jobs:
       - run: node --check frontend/js/chat.js
       - run: node --check frontend/js/site.js
       - run: node --check frontend/js/villa.js
+      - run: node --check frontend/js/book.js
       - run: node frontend/tests/chat.test.cjs

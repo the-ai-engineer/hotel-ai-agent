@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="/">
+<title>Reserve a villa · Sanctuary Hotel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="chat.css"><link rel="stylesheet" href="villa.css"><link rel="stylesheet" href="book.css">
+</head><body class="villa-page">
+<header class="villa-header"><a class="villa-back" href="/#villas">All villas</a><a class="brand" href="/">SANCTUARY HOTEL<small>LUXURY FOREST RETREAT</small></a><button data-chat>Ask the concierge</button></header>
+<main class="booking-layout">
+<div class="booking-photo"><img id="bookingImage" src="assets/suite.png" alt="Forest Suite"></div>
+<section class="booking-details"><h1>Reserve your villa</h1><p class="booking-lead">Choose your dates, then review your stay.</p>
+<form id="bookingForm">
+<label for="bookingVilla">Villa</label><select id="bookingVilla" name="villa_id"><option value="forest-suite">Forest Suite</option><option value="garden-villa">Garden Villa</option></select>
+<div class="booking-dates"><div><label for="bookingIn">Check-in</label><input id="bookingIn" name="check_in" type="date" required></div><div><label for="bookingOut">Check-out</label><input id="bookingOut" name="check_out" type="date" required></div></div>
+<label for="bookingGuests">Guests, including children and infants</label><input id="bookingGuests" name="guests" type="number" min="1" max="8" value="2" required>
+<button class="villa-enquire" id="reviewBooking" type="submit">Review reservation</button>
+</form>
+<p id="bookingStatus" role="status"></p>
+<div id="bookingReview" class="booking-review" hidden><h2>Review your stay</h2><p id="bookingSummary"></p><p>No payment is taken. This creates a demo reservation.</p><button id="confirmBooking" class="villa-enquire" type="button">Confirm reservation</button></div>
+<div id="bookingConfirmed" class="booking-confirmed" hidden><h2>Reservation confirmed</h2><p id="confirmedSummary"></p><p>Your booking reference</p><strong id="bookingReference"></strong><button id="askBooking" class="villa-enquire" data-ask="">Ask about my booking</button></div>
+<p class="booking-disclosure">Sanctuary Hotel is a fictional property. Reservations here are for the tutorial demo.</p>
+</section></main>
+<aside id="chat" class="chat" hidden aria-label="Guest concierge">
+<div class="chat-head">
+<span id="avatar" aria-hidden="true">S</span>
+<div>
+<strong id="chatName">Sanctuary concierge</strong>
+<small>Hotel information and villa availability</small>
+</div>
+<button id="closeChat" aria-label="Close concierge">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+</button>
+</div>
+<div class="chat-actions">
+<button id="newConversation" type="button">New conversation</button>
+</div>
+<div id="resetConfirm" class="chat-reset-confirm" hidden>
+<p>Start a new conversation? This chat will leave the current view.</p>
+<div>
+<button id="cancelReset" type="button">Keep this chat</button>
+<button id="confirmReset" type="button">Start new</button>
+</div>
+</div>
+<div class="chat-content" id="chatContent">
+<div id="chatWelcome">
+<h2 class="greeting">How may we help?</h2>
+<p>Ask about the villas, dining, arrival or hotel policies.</p>
+<div class="chat-suggestions">
+<button class="suggestion" data-ask="What time is breakfast?">What time is breakfast?</button>
+<button class="suggestion" data-ask="What are the check-in and check-out times?">Check-in and check-out times</button>
+<button class="suggestion" data-ask="Which villas are available for two guests next weekend?">Villa availability for two</button>
+</div>
+</div>
+<div id="messages" aria-live="polite">
+</div>
+</div>
+<div class="chat-bottom">
+<form id="chatForm">
+<input id="question" aria-label="Ask the concierge" placeholder="Ask a question" maxlength="2000" autocomplete="off">
+<button type="submit" aria-label="Send question">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+</button>
+</form>
+<button id="stopAnswer" type="button" hidden>Stop answer</button>
+</div>
+</aside>
+<button id="launch" data-chat>
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M21 11a8 8 0 0 1-8 8H6l-4 3 1-7a9 9 0 1 1 18-4Z"/>
+</svg>
+<span>YOUR CONCIERGE</span>
+</button>
+<script type="module" src="js/book.js?v=2"></script><script type="module" src="js/chat.js?v=5"></script></body></html>

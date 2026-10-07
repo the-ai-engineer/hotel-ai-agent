@@ -1,13 +1,16 @@
 import json
 
-from app import inventory
+from app import inventory, reservations
 
 
 class HotelTools:
-    """One invocation's read-only tools and evidence. Never shared between guests."""
+    """One invocation's tools and evidence. Never shared between guests."""
 
-    def __init__(self, pool):
+    def __init__(self, pool, guest=None):
         self.pool = pool
+        self.guest = guest
+        self.hotel_request = None
+        self.owned_references = set()
         self.sources = {}
         self.calls = 0
         self.characters = 0
@@ -85,4 +88,34 @@ class HotelTools:
         )
         # Retain the latest successful search only. Invalid subsequent input clears prior cards.
         self.availability = result if "error" not in result else None
+        return result
+
+    async def lookup_booking(self, reference: str = "") -> dict:
+        """Look up only this guest's booking. Empty reference returns their latest booking. Reference alone never grants access."""
+        if not self.admit() or not self.guest:
+            return {"error": "booking_unavailable"}
+        booking = await reservations.lookup_booking(
+            self.pool, self.guest["session_hash"], reference
+        )
+        if not booking:
+            return {
+                "error": "booking_not_found",
+                "message": "No matching booking in this guest session.",
+            }
+        self.owned_references.add(booking["reference"])
+        return {"booking": booking}
+
+    async def prepare_hotel_request(self, booking_reference: str, note: str) -> dict:
+        """Prepare a note for an owned booking just looked up. The guest must click Send request; this does not notify staff or change the booking."""
+        if not self.admit() or not self.guest:
+            return {"error": "request_unavailable"}
+        if self.hotel_request:
+            return {"error": "request_already_prepared"}
+        if booking_reference.strip().upper() not in self.owned_references:
+            return {"error": "lookup_required", "message": "Look up the booking first."}
+        result = await reservations.prepare_request(
+            self.pool, self.guest, booking_reference, note
+        )
+        if "error" not in result:
+            self.hotel_request = result
         return result

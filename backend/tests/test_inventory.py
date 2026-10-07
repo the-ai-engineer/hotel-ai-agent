@@ -36,7 +36,7 @@ async def test_missing_night_is_unavailable_and_outside_horizon_is_unknown(pool)
     assert (await check_availability(pool, "2026-11-01", "2026-11-04", 4))[
         "cards"
     ] == []
-    result = await check_availability(pool, "2026-11-10", "2026-11-12", 2)
+    result = await check_availability(pool, "2027-11-10", "2027-11-12", 2)
     assert result["status"] == "unknown_inventory" and result["cards"] == []
 
 
@@ -67,3 +67,9 @@ async def test_villa_facts_and_invocation_card_isolation(pool):
     assert two.availability is None
     await one.check_availability("next week", "2026-11-04", 4)
     assert one.availability is None
+
+
+async def test_near_term_inventory_includes_october_weekend(pool):
+    result = await check_availability(pool, "2026-10-10", "2026-10-11", 2)
+    assert result["status"] == "available"
+    assert len(result["cards"]) == 2

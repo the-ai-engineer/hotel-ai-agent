@@ -1,0 +1,15 @@
+.booking-layout{display:grid;grid-template-columns:1.1fr 1fr;gap:7%;max-width:1380px;padding:48px 4% 80px;margin:auto}
+.booking-photo img{width:100%;height:100%;max-height:850px;min-height:600px;object-fit:cover;display:block}
+.booking-details h1{font-family:'Cormorant Garamond',serif;font-size:clamp(42px,4.5vw,62px);line-height:1.1;letter-spacing:-.02em;font-weight:400;margin:6px 0 16px}
+.booking-lead{font-size:17px;line-height:1.6;color:#53634e;margin:0 0 30px}
+#bookingForm label{display:block;font-size:14px;margin:20px 0 8px}
+#bookingForm input,#bookingForm select{width:100%;height:48px;padding:0 12px;border:1px solid #929b85;border-radius:3px;background:#fffdf8;color:#283b2c;font:16px 'Jost',sans-serif}
+.booking-dates{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.booking-review,.booking-confirmed{margin-top:28px;padding:24px 0;border-top:1px solid #cfd1c5}
+.booking-review h2,.booking-confirmed h2{font-size:34px;margin:0 0 20px}
+.booking-review p,.booking-confirmed p,#bookingStatus{font-size:16px;line-height:1.7}
+#bookingStatus{color:#644329}
+#bookingReference{display:block;font-size:24px;letter-spacing:.04em}
+.booking-disclosure{font-size:13px;line-height:1.6;color:#53634e;margin-top:30px}
+#confirmBooking:disabled,#reviewBooking:disabled{opacity:.65;cursor:wait}
+@media(max-width:700px){.booking-layout{grid-template-columns:1fr;gap:30px;padding:24px 20px 50px}.booking-photo img{min-height:0;height:280px}.booking-dates{gap:12px}}

@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { JSDOM } from 'jsdom';
+const html = readFileSync(new URL('../book.html', import.meta.url), 'utf8');
+function page(url) {
+  const dom = new JSDOM(html, { url });
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+  globalThis.location = dom.window.location;
+  globalThis.history = dom.window.history;
+  return dom;
+}
+const tick = () => new Promise(resolve => setTimeout(resolve, 10));
+const booking = { reference: 'SH-123456ABCDEF', villa_id: 'garden-villa', villa_name: 'Garden Villa', check_in: '2026-11-01', check_out: '2026-11-04', guests: 4, status: 'confirmed' };
+const confirmations = [];
+globalThis.fetch = async (url, options) => {
+  if (url.startsWith('/api/availability')) return { ok: true, json: async () => ({ cards: [{ id: 'garden-villa' }] }) };
+  if (url === '/api/session') return { ok: true };
+  if (url.startsWith('/api/bookings/')) return { ok: true, json: async () => ({ booking }) };
+  assert.equal(url, '/api/bookings');
+  confirmations.push(JSON.parse(options.body));
+  if (confirmations.length === 1) return { ok: false, status: 503, json: async () => ({ detail: 'Try again' }) };
+  return { ok: true, json: async () => ({ booking }) };
+};
+const dom = page('http://127.0.0.1:8773/book?villa=garden-villa&check_in=2026-11-01&check_out=2026-11-04&guests=4');
+await import('../js/book.js');
+assert.equal(document.querySelector('#bookingGuests').value, '4');
+document.querySelector('#bookingForm').dispatchEvent(new dom.window.Event('submit', { cancelable: true }));
+await tick();
+assert.equal(document.querySelector('#bookingReview').hidden, false);
+assert.equal(confirmations.length, 0);
+document.querySelector('#confirmBooking').click();
+await tick();
+assert.match(document.querySelector('#bookingStatus').textContent, /Try again/);
+document.querySelector('#confirmBooking').click();
+await tick();
+assert.deepEqual(confirmations[0], confirmations[1]);
+assert.equal(document.querySelector('#bookingReference').textContent, booking.reference);
+assert.equal(document.querySelector('#bookingForm').hidden, true);
+assert.match(location.search, /reference=SH-123456ABCDEF/);
+page('http://127.0.0.1:8773/book?reference=SH-123456ABCDEF');
+await import('../js/book.js?refresh');
+assert.equal(document.querySelector('#bookingReference').textContent, booking.reference);
+assert.equal(document.querySelector('#bookingForm').hidden, true);
+console.log('Booking review, idempotent retry and refresh recovery passed.');

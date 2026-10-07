@@ -6,7 +6,7 @@ Canonical product scope, 6 October 2026. [Architecture](Architecture.md) defines
 
 Visitors should find reliable answers and suitable accommodation without waiting for hotel staff. Staff should spend less time answering repeated questions. These are intended benefits to validate with a real hotel, not measured results of this demo.
 
-Keep the existing Sanctuary Hotel website. Connect its disabled concierge preview to a real ADK agent. The demo uses fictional published policies, villas and occupancy in PostgreSQL. Published optional service charges may be explained; nightly room prices are not available. It checks availability but never creates a booking.
+Keep the existing Sanctuary Hotel website. Connect its disabled concierge preview to a real ADK agent. The demo uses fictional published policies, villas and occupancy in PostgreSQL. Published optional service charges may be explained; nightly room prices are not available. Guests can review and confirm fictional reservations on a dedicated booking page. The agent can look up session-owned reservations and prepare notes that the guest confirms for hotel review.
 
 ## Finished guest journey
 
@@ -31,6 +31,8 @@ Keep the existing Sanctuary Hotel website. Connect its disabled concierge previe
 | R9 | Abuse limits and bounded model context apply before model calls. No credentials or private records reach the browser. | Shared-budget tests, runtime database permission tests and configured deployment checks. |
 | R10 | Failures are traceable without logging guest text or secrets. Conversation data is deleted on schedule. | Injected lookup failure, linked trace/logs, delivered alert and retention cleanup. |
 | R11 | A clean checkout can be installed, migrated, explicitly seeded, run, evaluated and deployed using documented prompts and commands. | Rehearsal with recorded versions and successful outputs. |
+| R12 | Demo booking confirmation is explicit, rejects overlaps, rechecks capacity and dates, and is idempotent. | PostgreSQL concurrency and API/browser confirmation tests. |
+| R13 | Owned booking lookup and confirmed notes enforce guest ownership. Failed/reset/expired drafts cannot execute; notes remain pending review. | Cross-guest and note-state regressions. |
 
 ## Concurrent-user target
 
@@ -49,7 +51,7 @@ Stage the deployed test at 10, 25, 50 and 100 active turns. Sustain the final st
 
 ## Out of scope
 
-Booking or payment writes, accommodation pricing, verified guest accounts, WhatsApp, multiple hotels, a staff inbox, a CMS, embeddings and background agent orchestration. No contact destination is configured in the source pack. Explain this honestly; add a normal contact link only when a destination is approved. There is no staffed live-chat handoff.
+Real booking-provider or payment writes, accommodation pricing, verified guest accounts, WhatsApp, multiple hotels, a staff inbox, a CMS, embeddings and background agent orchestration. No contact destination is configured in the source pack. Explain this honestly; add a normal contact link only when a destination is approved. There is no staffed live-chat handoff.
 
 ## Decisions before release
 

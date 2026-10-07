@@ -2,6 +2,10 @@
   "name": "hotel-widget-checks",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node tests/reply.test.js" },
-  "devDependencies": { "jsdom": "27.4.0" }
+  "scripts": {
+    "test": "node tests/reply.test.js && node tests/book.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "27.4.0"
+  }
 }

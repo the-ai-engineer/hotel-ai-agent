@@ -13,7 +13,7 @@ async def test_catalogue_body_and_budget(pool):
     tools = HotelTools(pool)
     assert (await tools.read_document("dining-policy", 2))["error"] == "not_listed"
     catalogue = (await tools.list_documents())["documents"]
-    assert len(catalogue) == 6
+    assert len(catalogue) == 7
     assert all("body" not in row and "file" not in row for row in catalogue)
     doc = await tools.read_document("dining-policy", 2)
     assert doc["body"] == (SOURCE / "policies/dining.md").read_text()
@@ -74,7 +74,7 @@ async def test_reject_oversized_and_changed_revision_without_partial_import(
     with pytest.raises(ValueError, match="increment revision"):
         await import_policies(pool, source)
     async with pool.acquire() as conn:
-        assert await conn.fetchval("SELECT count(*) FROM documents") == 6
+        assert await conn.fetchval("SELECT count(*) FROM documents") == 7
         assert "10:30" in await conn.fetchval(
             "SELECT body FROM documents WHERE id='dining-policy'"
         )

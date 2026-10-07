@@ -1,5 +1,5 @@
 import json
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -57,10 +57,36 @@ async def import_inventory(pool, source):
         not (source.parent / "frontend" / villa.image).is_file() for villa in villas
     ):
         raise ValueError("Villa images must reference an approved existing site asset.")
+    if horizon := inventory.get("horizon"):
+        start, end = (
+            date.fromisoformat(horizon["start"]),
+            date.fromisoformat(horizon["end"]),
+        )
+        if not 1 <= (end - start).days <= 730 or any(
+            not start <= row.night < end for row in days
+        ):
+            raise ValueError(
+                "Inventory horizon must contain all explicit nights and span at most two years."
+            )
+        overrides = {(row.villa_id, row.night): row.open for row in days}
+        days = [
+            InventoryDay(
+                villa_id=villa.id,
+                night=start + timedelta(days=n),
+                open=overrides.get((villa.id, start + timedelta(days=n)), True),
+            )
+            for villa in villas
+            for n in range((end - start).days)
+        ]
     async with pool.acquire(timeout=3) as conn, conn.transaction():
         await conn.execute("SELECT pg_advisory_xact_lock(431299)")
-        # Explicit fictional fixture import, never a runtime booking operation.
-        await conn.execute("DELETE FROM bookings")
+        for villa_id in sorted(ids):
+            await conn.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended($1,0))",
+                f"villa:{villa_id}",
+            )
+        # Explicit fictional fixture import; retain guest reservations.
+        await conn.execute("DELETE FROM bookings WHERE reference IS NULL")
         await conn.execute("DELETE FROM inventory_days")
         for villa in villas:
             await conn.execute(
@@ -93,6 +119,11 @@ async def get_villa(pool, villa_id):
 
 
 async def check_availability(pool, check_in, check_out, guests):
+    async with pool.acquire(timeout=3) as conn:
+        return await availability_on_connection(conn, check_in, check_out, guests)
+
+
+async def availability_on_connection(conn, check_in, check_out, guests):
     try:
         start, end = date.fromisoformat(check_in), date.fromisoformat(check_out)
         if start.isoformat() != check_in or end.isoformat() != check_out:
@@ -116,31 +147,30 @@ async def check_availability(pool, check_in, check_out, guests):
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "cards": [],
     }
-    async with pool.acquire(timeout=3) as conn:
-        horizon = await conn.fetchrow(
-            "SELECT min(night) AS first,max(night) AS last FROM inventory_days"
-        )
-        if (
-            not horizon["first"]
-            or start < horizon["first"]
-            or end.toordinal() - 1 > horizon["last"].toordinal()
-        ):
-            return {
-                **result,
-                "status": "unknown_inventory",
-                "message": "These dates are outside the fictional inventory. Availability is unknown.",
-            }
-        rows = await conn.fetch(
-            """SELECT v.data FROM villas v WHERE v.capacity >= $3
-            AND (SELECT count(*) FROM inventory_days d WHERE d.villa_id=v.id
-                AND d.night >= $1 AND d.night < $2 AND d.open) = $4
-            AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.villa_id=v.id
-                AND b.status='confirmed' AND b.check_in < $2 AND b.check_out > $1)
-            ORDER BY v.capacity,v.id""",
-            start,
-            end,
-            guests,
-            nights,
-        )
+    horizon = await conn.fetchrow(
+        "SELECT min(night) AS first,max(night) AS last FROM inventory_days"
+    )
+    if (
+        not horizon["first"]
+        or start < horizon["first"]
+        or end.toordinal() - 1 > horizon["last"].toordinal()
+    ):
+        return {
+            **result,
+            "status": "unknown_inventory",
+            "message": "These dates are outside the fictional inventory. Availability is unknown.",
+        }
+    rows = await conn.fetch(
+        """SELECT v.data FROM villas v WHERE v.capacity >= $3
+        AND (SELECT count(*) FROM inventory_days d WHERE d.villa_id=v.id
+            AND d.night >= $1 AND d.night < $2 AND d.open) = $4
+        AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.villa_id=v.id
+            AND b.status='confirmed' AND b.check_in < $2 AND b.check_out > $1)
+        ORDER BY v.capacity,v.id""",
+        start,
+        end,
+        guests,
+        nights,
+    )
     cards = [json.loads(row["data"]) for row in rows]
     return {**result, "status": "available" if cards else "no_match", "cards": cards}

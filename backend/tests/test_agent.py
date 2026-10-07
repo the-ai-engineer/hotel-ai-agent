@@ -13,6 +13,10 @@ class ScriptedModel(BaseLlm):
     saw_history: bool = False
 
     async def generate_content_async(self, llm_request, stream=False):
+        assert (
+            "Current property date: 2026-10-06 (Tuesday), timezone Asia/Makassar"
+            in str(llm_request.config.system_instruction)
+        )
         self.saw_history |= any(
             "Previous guest question" in (part.text or "")
             for content in llm_request.contents
@@ -44,6 +48,11 @@ class ScriptedModel(BaseLlm):
 
 
 async def test_actual_adk_tool_dispatch_and_isolated_working_history(pool, monkeypatch):
+    monkeypatch.setattr(
+        agent,
+        "current_date_context",
+        lambda: "Current property date: 2026-10-06 (Tuesday), timezone Asia/Makassar",
+    )
     models = []
 
     def fake_gemini(**kwargs):

@@ -30,7 +30,7 @@ async def test_guest_origin_ownership_expiry(client, pool):
     ).status_code == 403
     await start(client)
 
-    async def fake(pool, settings, history, question):
+    async def fake(pool, settings, history, question, guest=None):
         assert history == []
         yield {"type": "result", "answer": "Saved test answer", "sources": []}
 
@@ -59,7 +59,7 @@ async def test_guest_origin_ownership_expiry(client, pool):
 async def test_failed_stream_does_not_save_partial_and_releases_lock(client):
     await start(client)
 
-    async def fail(pool, settings, history, question):
+    async def fail(pool, settings, history, question, guest=None):
         yield {"type": "text", "text": "Partial"}
         raise RuntimeError("private failure detail")
 
@@ -76,7 +76,7 @@ async def test_failed_stream_does_not_save_partial_and_releases_lock(client):
     )
     assert (await client.get("/api/history")).json()["turns"] == []
 
-    async def success(pool, settings, history, question):
+    async def success(pool, settings, history, question, guest=None):
         yield {"type": "result", "answer": "Retry works", "sources": []}
 
     client.app.state.answer = success
@@ -96,7 +96,7 @@ async def test_duplicate_and_bad_input_do_not_invoke_model(client):
     await start(client)
     calls = []
 
-    async def success(pool, settings, history, question):
+    async def success(pool, settings, history, question, guest=None):
         calls.append(question)
         yield {"type": "result", "answer": "Test answer", "sources": []}
 
@@ -126,7 +126,7 @@ async def test_disconnect_cleans_up_inside_cancelled_asgi_scope(client, pool):
     await start(client)
     model_started = asyncio.Event()
 
-    async def waiting(pool, settings, history, question):
+    async def waiting(pool, settings, history, question, guest=None):
         model_started.set()
         await asyncio.Event().wait()
         yield {"type": "result", "answer": "Never reached", "sources": []}
@@ -175,7 +175,7 @@ async def test_disconnect_cleans_up_inside_cancelled_asgi_scope(client, pool):
         )
         assert await conn.fetchval("SELECT active_turn FROM guest_sessions") is None
 
-    async def success(pool, settings, history, question):
+    async def success(pool, settings, history, question, guest=None):
         yield {"type": "result", "answer": "Immediate retry", "sources": []}
 
     client.app.state.answer = success
@@ -194,7 +194,7 @@ async def test_disconnect_before_stream_starts_releases_admission(client, pool):
     await start(client)
     called = False
 
-    async def model(pool, settings, history, question):
+    async def model(pool, settings, history, question, guest=None):
         nonlocal called
         called = True
         yield {"type": "result", "answer": "Not reached", "sources": []}
@@ -250,7 +250,7 @@ async def test_new_conversation_clears_context_and_survives_refresh_without_dele
     await start(client)
     calls = []
 
-    async def success(pool, settings, history, question):
+    async def success(pool, settings, history, question, guest=None):
         calls.append(history)
         yield {"type": "result", "answer": "Saved reply", "sources": []}
 
@@ -297,7 +297,7 @@ async def test_availability_result_is_saved_in_history(client, pool):
     await start(client)
     availability = await check_availability(pool, "2026-11-01", "2026-11-04", 4)
 
-    async def success(pool, settings, history, question):
+    async def success(pool, settings, history, question, guest=None):
         yield {
             "type": "result",
             "answer": "Garden Villa is available.",
