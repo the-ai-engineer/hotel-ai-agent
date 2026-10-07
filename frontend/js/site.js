@@ -4,16 +4,39 @@ $('#menuButton').onclick=()=>{const opened=$('#menu').hidden;$('#menu').hidden=!
 
 // Keep the still image for visitors who prefer reduced motion.
 const heroVideo = $('#heroVideo');
+const heroPlayback = $('#heroPlayback');
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let userPaused = false;
+function updateHeroPlayback() {
+  const playing = !heroVideo.paused;
+  heroPlayback.textContent = playing ? 'Pause background' : 'Play background';
+  heroPlayback.setAttribute('aria-label', playing ? 'Pause background video' : 'Play background video');
+}
 async function playHero() {
   if (!heroVideo.getAttribute('src')) heroVideo.src = 'assets/hero-rotation.mp4';
   heroVideo.muted = true;
-  try { await heroVideo.play(); } catch { /* Keep the poster if autoplay is blocked. */ }
+  try { await heroVideo.play(); } catch { /* Keep the poster if playback is blocked. */ }
+  updateHeroPlayback();
 }
-heroVideo.addEventListener('error', () => { heroVideo.hidden = true; });
+heroPlayback.hidden = false;
+heroPlayback.addEventListener('click', () => {
+  if (heroVideo.paused) {
+    userPaused = false;
+    playHero();
+  } else {
+    userPaused = true;
+    heroVideo.pause();
+  }
+});
+heroVideo.addEventListener('play', updateHeroPlayback);
+heroVideo.addEventListener('pause', updateHeroPlayback);
+heroVideo.addEventListener('error', () => {
+  heroVideo.hidden = true;
+  heroPlayback.hidden = true;
+});
 reducedMotion.addEventListener('change', event => {
   if (event.matches) heroVideo.pause();
-  else playHero();
+  else if (!userPaused) playHero();
 });
 if (!reducedMotion.matches) playHero();
 
