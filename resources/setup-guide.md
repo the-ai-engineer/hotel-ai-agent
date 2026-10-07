@@ -2,24 +2,24 @@
 
 Open this repository in Codex, Claude Code or another coding assistant with terminal access. Paste one prompt at a time. Review its result before continuing.
 
-The website in `code/website/` works today with simulated chat. The backend, database and deployment are planned. These prompts guide that build; they do not imply those components already exist.
+The website and policy chat are implemented. Cloud deployment and live capacity verification remain planned. The prompts below cover setup and subsequent build steps.
 
 ## Preview the website
 
 ```text
-Read README.md and inspect the repository. Start the existing static hotel website
-on localhost, using port 8773 if it is free. Reuse an existing server only if it
+Read README.md and inspect the repository. Start the PostgreSQL service, install locked backend dependencies, apply migrations
+and seed fictional policies explicitly. Start FastAPI on port 8773 if it is free. Reuse an existing server only if it
 serves this website. Open the URL and verify the homepage and concierge widget.
-Keep the design unchanged. Tell me which responses are simulated and how to stop
-the server.
+Keep the design unchanged. Tell me whether model access is configured and how to stop the server.
+Do not substitute mock answers if credentials are unavailable.
 ```
 
-**Check:** the Sanctuary Hotel homepage loads and the simulated widget works.
+**Check:** the Sanctuary Hotel homepage loads and the widget works or explains that model access is missing.
 
 ## Install the local tools
 
 ```text
-Inspect my operating system, processor and installed tools. Set up Python 3.11+
+Inspect my operating system, processor and installed tools. Set up Python 3.12
 (or a newer version supported by the project), uv, Node.js and Google Cloud CLI.
 Use official installation instructions and reuse compatible installations.
 Use WSL 2 for Agents CLI on Windows; native Windows is not officially supported.

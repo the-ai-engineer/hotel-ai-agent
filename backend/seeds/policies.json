@@ -1,0 +1,17 @@
+[
+  {
+    "slug": "breakfast",
+    "title": "Breakfast",
+    "body": "Breakfast is served from 07:00 to 10:30 in the restaurant. Breakfast is included in the fictional villa stay. Pool breakfast requires confirmation from the hotel."
+  },
+  {
+    "slug": "arrival",
+    "title": "Arrival and departure",
+    "body": "Check-in is from 15:00. Check-out is by 11:00. Late checkout depends on availability and must be confirmed by the hotel."
+  },
+  {
+    "slug": "cancellation",
+    "title": "Cancellation",
+    "body": "For this fictional flexible rate, cancellation is free until seven days before arrival. Contact the hotel to confirm the terms of your actual reservation."
+  }
+]

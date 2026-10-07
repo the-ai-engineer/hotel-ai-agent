@@ -2,7 +2,7 @@
 
 Repository companion to the [script](https://docs.google.com/document/d/1iew1Q6D1TstNOhaNfR92Rjt5rQtfq4UBF7rP0c0UIB0/edit) and [Passage review copy](https://passage.md/d/UNCo0VxmJNyBqmHD0urd9g).
 
-**Build status:** the hotel website is a runnable prototype with simulated chat. The agent, database and cloud deployment below are the planned tutorial build.
+**Build status:** the website and PostgreSQL-backed ADK policy chat are implemented. Availability, cloud release and live capacity verification remain in the implementation backlog.
 
 Alternative title: How I Ship Production AI Agents (Full Guide)
 
