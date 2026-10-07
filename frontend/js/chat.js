@@ -182,7 +182,7 @@ document.addEventListener("click", async (event) => {
   }
   if (event.target.closest("[data-guide]")) {
     await open();
-    send("What time can I check in?");
+    send("Tell me about the Forest Suite.");
   }
 });
 $("#closeChat").onclick = () => {
@@ -213,4 +213,4 @@ $("#reset").onclick = async () => {
 };
 $("#question").maxLength = 2000;
 $("#chatWelcome").textContent =
-  "Ask about arrival, breakfast or hotel policies.";
+  "Ask about arrival, breakfast or available villas for your dates.";

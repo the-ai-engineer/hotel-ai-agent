@@ -16,8 +16,15 @@ class Database:
         )
 
     @asynccontextmanager
-    async def transaction(self):
+    async def transaction(self, *, read_only=False, repeatable_read=False):
         async with self.engine.begin() as connection:
+            if read_only:
+                command = (
+                    "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
+                    if repeatable_read
+                    else "SET TRANSACTION READ ONLY"
+                )
+                await connection.execute(text(command))
             yield connection
 
     async def ready(self):
@@ -27,7 +34,7 @@ class Database:
                     text("SELECT schema_version, min_app_schema FROM schema_contract WHERE id=1")
                 )
             ).one()
-            if not row.schema_version >= 1 >= row.min_app_schema:
+            if not row.schema_version >= 2 >= row.min_app_schema:
                 raise RuntimeError("Incompatible database schema")
 
     async def close(self):

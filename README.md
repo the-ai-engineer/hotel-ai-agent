@@ -3,8 +3,8 @@
 A planned tutorial about adding an AI support widget to a fictional hotel website,
 then deploying, testing, and operating it on Google Cloud.
 
-**Status:** policy chat is implemented with Google ADK, Gemini on Vertex AI,
-PostgreSQL and a fetch/SSE widget. Availability, deployment and capacity testing
+**Status:** policy chat and villa availability are implemented with Google ADK, Gemini on Vertex AI,
+PostgreSQL and a fetch/SSE widget. Deployment and capacity testing
 are tracked in the [implementation issues](https://github.com/owainlewis/hotel-ai-agent/issues).
 Cloud model access and production capacity are not yet verified.
 

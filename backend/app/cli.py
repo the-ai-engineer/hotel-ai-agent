@@ -1,8 +1,10 @@
 import argparse
 import asyncio
 import json
+from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
 
@@ -36,6 +38,48 @@ async def seed(settings):
                 """),
                     {"section": uuid5(id, "section/1"), "version": id, "body": body},
                 )
+            today = datetime.now(ZoneInfo(settings.hotel_timezone)).date()
+            end = today + timedelta(days=365)
+            villas = json.loads(
+                (Path(__file__).resolve().parents[1] / "seeds/villas.json").read_text()
+            )
+            # Re-seeding is explicit; replace only this demo property's occupancy.
+            ids = [uuid5(NAMESPACE_URL, "sanctuary/villa/" + villa["slug"]) for villa in villas]
+            await connection.execute(
+                text("DELETE FROM bookings WHERE villa_id=ANY(CAST(:ids AS uuid[]))"), {"ids": ids}
+            )
+            await connection.execute(
+                text("DELETE FROM inventory_days WHERE villa_id=ANY(CAST(:ids AS uuid[]))"),
+                {"ids": ids},
+            )
+            for villa in villas:
+                villa_id = uuid5(NAMESPACE_URL, "sanctuary/villa/" + villa["slug"])
+                await connection.execute(
+                    text("""INSERT INTO villas(id,slug,name,description,capacity,amenities,image)
+                    VALUES(:id,:slug,:name,:description,:capacity,CAST(:amenities AS jsonb),:image)
+                    ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,description=EXCLUDED.description,capacity=EXCLUDED.capacity,amenities=EXCLUDED.amenities,image=EXCLUDED.image"""),
+                    {**villa, "id": villa_id, "amenities": json.dumps(villa["amenities"])},
+                )
+                await connection.execute(
+                    text("""INSERT INTO inventory_days(villa_id,day)
+                    SELECT :id,d::date FROM generate_series(CAST(:start AS date),CAST(:end AS date)-1,interval '1 day') AS d"""),
+                    {"id": villa_id, "start": today, "end": end},
+                )
+            await connection.execute(
+                text("""INSERT INTO demo_inventory VALUES(1,:start,:end)
+                ON CONFLICT(id) DO UPDATE SET starts_on=EXCLUDED.starts_on,ends_on=EXCLUDED.ends_on"""),
+                {"start": today, "end": end},
+            )
+            await connection.execute(
+                text("""INSERT INTO bookings(id,villa_id,check_in,check_out,status)
+                VALUES(:id,:villa,:start,:end,'blocking')"""),
+                {
+                    "id": uuid5(NAMESPACE_URL, "sanctuary/demo-booking"),
+                    "villa": uuid5(NAMESPACE_URL, "sanctuary/villa/forest-suite"),
+                    "start": today + timedelta(days=7),
+                    "end": today + timedelta(days=10),
+                },
+            )
     finally:
         await db.close()
 
