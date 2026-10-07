@@ -107,7 +107,7 @@ async def test_duplicate_and_bad_input_do_not_invoke_model(client):
     ).status_code == 200
     assert (
         await client.post("/api/chat", headers=ORIGIN, json=data)
-    ).status_code == 409
+    ).json()["status"] == "completed"
     assert (
         await client.post("/api/chat", headers=ORIGIN, json={**data, "message": " "})
     ).status_code == 422

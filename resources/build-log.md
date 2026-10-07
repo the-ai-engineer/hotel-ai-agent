@@ -124,3 +124,48 @@ Results: eight core scenarios and two held-back scenarios passed their determini
 Observed failures and fixes: weekend phrasing caused needless clarification, corrected with a computed Friday/Sunday default and explicit assumption; booking follow-up sometimes skipped fresh availability, corrected with an explicit same-stay recheck and date/card assertions. The failing multi-turn case passed twice after the fix, then passed in the full core suite. One source assertion was corrected because the arrival document alone contained all the facts. Reply inspection caught unsupported “plunge pool” wording, so the prompt now prohibits embellishing amenities. Nightly rates remain unavailable and must not be offered.
 
 36 backend tests, frontend checks and desktop/mobile menu inspection passed. Open-menu header now uses dark ink on cream with clear space above navigation. Browser weekend search displays exact dates and a fresh Reserve card. Claude and independent reviews approved. Generated response files remain outside Git in `/tmp`.
+
+## GRA-214: durable conversation recovery and bounded admission
+
+Prompt: “Implement GRA-214 on the merged policy/villa slices. Keep ownership and
+completed turns in PostgreSQL, add owned status and Stop, replay duplicate turn IDs,
+recover crashed attempts by deadline, share budgets across processes and reject
+model overload without queuing. Prove 20 concurrent conversations across two API
+processes. Hold the final PR open.”
+
+Tooling: Agents CLI 1.8.0, Claude Code 2.1.292, locked uv environment with Python
+3.11.11, ADK 2.11.0 and local PostgreSQL 17. `agents-cli info` was inspected; no
+scaffold, agent prompt/model/tool change or deployment was needed for this API slice.
+
+Verified commands:
+
+```bash
+uv sync --locked --directory backend
+DATABASE_URL=postgresql://hotel:hotel@127.0.0.1:55439/hotel_policy uv run --directory backend pytest -q
+uv run --directory backend ruff check app tests evaluate.py
+npm ci --prefix frontend
+npm test --prefix frontend
+node frontend/tests/chat.test.cjs
+python3 scripts/verify_website.py
+git diff --check
+```
+
+48 backend tests pass, including 12 recovery tests. The two-process HTTP exercise
+observes 20 running turns concurrently, isolated history and durable replay. Other
+checks cover foreign access, current-conversation scope, running duplicates,
+competing attempts, Stop, process kill, deadline expiry, rejected final writes,
+late output, shared quotas, Asia/Makassar day buckets, counter pruning, overload
+and permit release. Frontend regressions cover refresh polling, Stop, retry and
+useful overload errors.
+
+Real browser proof uses a disposable schema and deterministic producer at port
+8874: completed history survives server restart and refresh; another tab recovers
+an active turn; Stop allows immediate retry. The browser console reports no
+errors or warnings during these flows. This is not a live Gemini quality or
+deployed capacity claim; those remain GRA-215 and GRA-218.
+
+Claude review identified a final-commit/watch cancellation race and silent watcher
+failure. Fixed with durable-state-specific cancellation and safe producer
+termination; regressions reproduce both cases. Cross-process Stop now returns a
+clean SSE error and a one-slot process accepts another turn afterward. Independent
+final review approved.

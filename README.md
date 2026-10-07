@@ -9,8 +9,10 @@ PostgreSQL. Read-only villa availability returns photo cards. Guests can start a
 new conversation without carrying old context forward. Villa cards open dedicated
 Forest Suite and Garden Villa pages with the same saved conversation. Reserve buttons
 open a review-and-confirm booking page. The concierge can look up owned demo
-reservations and prepare notes for explicit guest confirmation. Stronger turn recovery, production limits and
-cloud deployment are later Linear slices. This branch is a local development demo.
+reservations and prepare notes for explicit guest confirmation. Turn status, duplicate replay,
+Stop/refresh/crash recovery, shared request budgets and bounded model admission are
+implemented locally. Cloud deployment and production capacity remain later Linear slices.
+This branch is a local development demo.
 
 ## Run the agent locally
 
@@ -37,6 +39,28 @@ The app uses application credentials, which are separate from gcloud's CLI login
 If port 55439 already serves an older hotel database, preserve its data. Create
 an isolated database named `hotel_policy` there, or set another local port in
 Compose and `backend/.env`. Do not replace another application's volume.
+
+## Conversation recovery and limits
+
+Refresh loads committed answers and checks the server's active-turn status. Stop
+interrupts the owned attempt; a new question is a new attempt. Reposting the same
+turn UUID returns its running status or committed result without another model call.
+A dead API process leaves an attempt running until its stored deadline, then the next
+status/history/admission request recovers it as interrupted.
+
+The default process cap is four active agent turns. Shared PostgreSQL limits are
+10 turns/session/minute, 30 turns/IP/minute, 60 turns/property/minute and
+10,000 turns/property-local day. The 60/minute value is a conservative demo guard,
+not measured Gemini capacity. Configure `ACTIVE_AGENT_LIMIT`,
+`SESSION_TURNS_PER_MINUTE`, `IP_TURNS_PER_MINUTE`, `PROPERTY_TURNS_PER_MINUTE`
+and `PROPERTY_TURNS_PER_DAY` for the agreed deployment. New sessions are limited
+to 10/IP/minute; conversation resets to 10/session/minute. Forwarded IP headers
+are ignored until the deployment proxy chain is verified. Daily counters reset
+at Asia/Makassar midnight. Expired counters are pruned in bounded batches on
+successful admission; scheduled conversation retention remains GRA-217.
+
+See [recovery acceptance evidence](docs/conversation-recovery.md). Local tests
+prove concurrency and recovery with deterministic producers, not deployed model capacity.
 
 ## Website-only recording start
 
