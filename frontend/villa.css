@@ -1,0 +1,37 @@
+.villa-page{color:#283b2c;background:#f6f4ee;font-weight:400}
+.villa-header{display:grid;grid-template-columns:1fr auto 1fr;position:relative;height:112px;color:#283b2c;border-bottom:1px solid #deded2}
+.villa-header .brand{position:static;transform:none;font-size:24px;letter-spacing:4px}
+.villa-header .brand small{font-family:'Jost',sans-serif;font-size:9px;letter-spacing:2px}
+.villa-back{justify-self:start}.villa-header>button{justify-self:end}
+.villa-back,.villa-header>button{font-size:14px;padding:14px 0;text-decoration:underline;text-underline-offset:5px}
+.villa-hero{padding:24px 4% 0}
+.villa-hero img{display:block;width:100%;height:clamp(300px,56vw,650px);object-fit:cover;object-position:center 55%}
+.villa-detail{display:grid;grid-template-columns:1.3fr 1fr;gap:12%;max-width:1280px;margin:auto;padding:70px 6% 80px}
+.villa-introduction h1{font-family:'Cormorant Garamond',serif;font-size:clamp(46px,5vw,72px);font-weight:400;line-height:1.05;letter-spacing:-.02em;margin:0 0 26px}
+.villa-introduction p{font-size:18px;line-height:1.75;max-width:50ch;margin:0 0 26px}
+.villa-bedding{color:#53634e;font-size:16px!important}
+.villa-facts dl{display:flex;gap:48px;margin:0 0 30px;padding-bottom:26px;border-bottom:1px solid #cfd1c5}
+.villa-facts dt{font-size:14px;color:#53634e;margin-bottom:8px}
+.villa-facts dd{margin:0;font-size:22px}
+.villa-facts h2,.villa-other h2{font-size:32px;letter-spacing:0;margin:0 0 20px}
+.villa-facts ul{margin:0 0 24px;padding-left:20px;font-size:16px;line-height:1.8}
+.villa-pool-note{font-size:15px;line-height:1.6;color:#53634e}
+.villa-enquire{display:block;margin-top:28px;padding:16px 26px;min-height:48px;background:#2f4535;color:#fffdf8;font-size:15px;border-radius:3px}
+.villa-enquire:hover{background:#1f3125}
+.villa-enquire-note{font-size:14px;color:#53634e;line-height:1.6}
+.villa-other{max-width:1280px;padding:35px 6% 70px;margin:auto;border-top:1px solid #cfd1c5}
+.villa-other a{display:inline-block;font-size:18px;padding:12px 0;text-decoration:underline;text-underline-offset:6px}
+.villa-footer{padding:50px 6%;border-top:1px solid #cfd1c5;text-align:center}
+.villa-page ::selection{background:#d6deca;color:#22372a}
+@media(max-width:650px){
+.villa-header{grid-template-columns:1fr 1fr;height:100px;padding:0 20px;align-items:flex-end;padding-bottom:12px}
+.villa-header .brand{position:absolute;left:50%;transform:translateX(-50%);top:18px;font-size:19px;letter-spacing:3px;white-space:nowrap}
+.villa-header .brand small{font-size:7px;margin-top:5px}
+.villa-back,.villa-header>button{font-size:13px;padding:5px 0}
+.villa-hero{padding:16px 16px 0}
+.villa-hero img{height:330px}
+.villa-detail{grid-template-columns:1fr;gap:30px;padding:38px 24px 48px}
+.villa-introduction p{font-size:16px}
+.villa-other{padding:32px 24px 48px}
+.villa-enquire{width:100%}
+}

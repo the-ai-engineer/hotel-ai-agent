@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<base href="/">
+<title>Villas · Sanctuary Hotel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="chat.css">
+<link rel="stylesheet" href="villa.css">
+</head>
+<body class="villa-page">
+<header class="villa-header">
+<a class="villa-back" href="/#villas">All villas</a>
+<a class="brand" href="/">SANCTUARY HOTEL<small>LUXURY FOREST RETREAT</small></a>
+<button data-chat>Ask the concierge</button>
+</header>
+<main>
+<div class="villa-hero" id="villaHero" hidden><img id="detailImage" alt=""></div>
+<section class="villa-detail" aria-labelledby="detailTitle" aria-busy="true" id="villaDetail">
+<div class="villa-introduction">
+<h1 id="detailTitle">Villa details</h1>
+<p id="detailDescription" role="status">Loading villa information…</p>
+<p class="villa-bedding" id="detailBeds"></p>
+</div>
+<div class="villa-facts" id="detailFacts" hidden>
+<dl><div><dt>Guests</dt><dd id="detailCapacity"></dd></div><div><dt>Bedrooms</dt><dd id="detailBedrooms"></dd></div></dl>
+<h2>In your villa</h2>
+<ul id="detailAmenities"></ul>
+<p class="villa-pool-note" id="detailPool"></p>
+<button class="villa-enquire" id="detailEnquire" data-ask="">Check availability</button>
+<p class="villa-enquire-note">Tell the concierge your dates and number of guests.</p>
+</div>
+</section>
+<section class="villa-other" id="otherVilla" hidden><h2>Explore another villa</h2><a id="otherVillaLink"></a></section>
+<footer class="villa-footer"><a class="brand" href="/">SANCTUARY HOTEL<small>LUXURY FOREST RETREAT</small></a></footer>
+</main>
+<aside id="chat" class="chat" hidden aria-label="Guest concierge">
+<div class="chat-head">
+<span id="avatar" aria-hidden="true">S</span>
+<div>
+<strong id="chatName">Sanctuary concierge</strong>
+<small>Hotel information and villa availability</small>
+</div>
+<button id="closeChat" aria-label="Close concierge">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+</button>
+</div>
+<div class="chat-actions">
+<button id="newConversation" type="button">New conversation</button>
+</div>
+<div id="resetConfirm" class="chat-reset-confirm" hidden>
+<p>Start a new conversation? This chat will leave the current view.</p>
+<div>
+<button id="cancelReset" type="button">Keep this chat</button>
+<button id="confirmReset" type="button">Start new</button>
+</div>
+</div>
+<div class="chat-content" id="chatContent">
+<div id="chatWelcome">
+<h2 class="greeting">How may we help?</h2>
+<p>Ask about the villas, dining, arrival or hotel policies.</p>
+<div class="chat-suggestions">
+<button class="suggestion" data-ask="What time is breakfast?">What time is breakfast?</button>
+<button class="suggestion" data-ask="What are the check-in and check-out times?">Check-in and check-out times</button>
+<button class="suggestion" data-ask="Which villas are available for two guests next weekend?">Villa availability for two</button>
+</div>
+</div>
+<div id="messages" aria-live="polite">
+</div>
+</div>
+<div class="chat-bottom">
+<form id="chatForm">
+<input id="question" aria-label="Ask the concierge" placeholder="Ask a question" maxlength="2000" autocomplete="off">
+<button type="submit" aria-label="Send question">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+</button>
+</form>
+<button id="stopAnswer" type="button" hidden>Stop answer</button>
+</div>
+</aside>
+<button id="launch" data-chat>
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M21 11a8 8 0 0 1-8 8H6l-4 3 1-7a9 9 0 1 1 18-4Z"/>
+</svg>
+<span>YOUR CONCIERGE</span>
+</button>
+<script type="module" src="js/villa.js"></script>
+<script type="module" src="js/chat.js?v=3"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Hotel concierge demo
 
-All hotel facts, charges and availability are fictional. These are target behaviors to film after implementation, not features already built. Prices below are IDR including tax; accommodation prices are not provided.
+All hotel facts, charges and availability are fictional. Availability, policy answers, source links, villa detail pages and saved conversations are implemented locally. Request submission and booking changes are not implemented. Prices below are IDR including tax; accommodation prices are not provided.
 
 ## Opening: one family conversation
 
@@ -39,3 +39,25 @@ Policy answers use `list_documents` to inspect titles, summaries and keywords, t
 ## Reset between takes
 
 Use **New conversation → Start new** before a fresh demo. **Keep this chat** cancels the reset. Refresh keeps the new conversation empty; closing the widget preserves it. This starts fresh context, it does not delete stored records.
+
+## Strongest three-minute recording
+
+Start a new conversation, then use this sequence:
+
+1. **“We’re two adults. Is the Forest Suite available from 3 to 5 November 2026?”** Forest Suite is blocked. Garden Villa is an alternative for the same dates. Open its card to show a proper detail page and preserved chat.
+2. **“We’d prefer the Forest Suite. What about 1 to 3 November instead?”** Fresh inventory check returns availability for the new full stay. Show the changed dates and Forest Suite card.
+3. **“It’s our anniversary. Can we have flowers and a private dinner for two within IDR 2,500,000?”** Read experiences policy, combine IDR 600,000 flowers/cake and IDR 1,800,000 dinner: IDR 2,400,000 excluding drinks. Explain 48-hour notice and staff confirmation.
+4. **“We arrive at 8am. Can we swim and leave our bags before our villa is ready?”** Read arrival and services evidence together. Explain the shared pool, luggage and showers without promising early room access.
+
+The demo shows changing requirements, deterministic inventory, a visual recommendation, cross-page continuity and multiple policy reads. It should not imply any request or booking has been made.
+
+## Other useful takes
+
+- **Family:** “Two adults and two children, three nights from 1 November 2026. Which villa suits us?” Then ask about a nut allergy, vegan breakfast and terrace delivery. Show capacity, bedding and qualified dietary guidance.
+- **Multilingual:** Ask an arrival question in Spanish. The current agent instructions support the guest’s language; verify the actual response before filming.
+- **Unknown dates:** Ask about December. Show a clear distinction between unrecorded inventory and sold-out accommodation.
+- **Operational proof:** Refresh the villa page and continue the conversation. Stop a response and retry. Pair this with a short look at the tools and database records.
+
+## Best next product feature, not implemented
+
+A guest confirms a late-checkout or anniversary request. The agent stores a structured, idempotent request and returns a reference with **Pending hotel approval**. A small staff inbox shows it for approval or follow-up. Do not claim a booking was changed. This needs explicit guest confirmation and a way for staff to contact the guest or identify their booking. It is a separate write-tool slice, not an extra FAQ.

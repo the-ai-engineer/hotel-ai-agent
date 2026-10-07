@@ -22,14 +22,18 @@ class References(HTMLParser):
 
 def main():
     page = References()
-    page.feed((ROOT / 'index.html').read_text())
+    for html in ROOT.glob('*.html'):
+        page.feed(html.read_text())
     urls = page.urls + re.findall(r"['\"](assets/[^'\"]+)['\"]", '\n'.join(path.read_text() for path in (ROOT / 'js').glob('*.js')))
     failures = []
     for url in urls:
         parsed = urlsplit(url)
         if parsed.scheme or parsed.netloc:
             continue
-        if parsed.path and not (ROOT / parsed.path).is_file():
+        path = parsed.path.lstrip('/')
+        if parsed.path == '/':
+            path = 'index.html'
+        if path and not (ROOT / path).is_file():
             failures.append(f'Missing local asset: {parsed.path}')
         if not parsed.path and parsed.fragment and parsed.fragment not in page.ids:
             failures.append(f'Missing section: {parsed.fragment}')

@@ -6,7 +6,8 @@ a fictional luxury forest retreat.
 **Status:** the existing website is connected to a local ADK policy concierge using
 Gemini 3.8 Flash on Vertex AI. Policies and completed conversations live in
 PostgreSQL. Read-only villa availability returns photo cards. Guests can start a
-new conversation without carrying old context forward. Stronger turn recovery, production limits and
+new conversation without carrying old context forward. Villa cards open dedicated
+Forest Suite and Garden Villa pages with the same saved conversation. Stronger turn recovery, production limits and
 cloud deployment are later Linear slices. This branch is a local development demo.
 
 ## Run the agent locally

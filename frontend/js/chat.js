@@ -86,7 +86,7 @@ function renderAvailability(node, result) {
     details.textContent = villa.beds.join(' · ');
     const link = document.createElement('a');
     link.className = 'villa-card-link';
-    link.href = `/?villa=${villa.id}#villas`;
+    link.href = `/villas/${villa.id}`;
     link.textContent = 'View villa';
     body.append(title, meta, details, link);
     card.append(image, body);
