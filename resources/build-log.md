@@ -124,3 +124,29 @@ Results: eight core scenarios and two held-back scenarios passed their determini
 Observed failures and fixes: weekend phrasing caused needless clarification, corrected with a computed Friday/Sunday default and explicit assumption; booking follow-up sometimes skipped fresh availability, corrected with an explicit same-stay recheck and date/card assertions. The failing multi-turn case passed twice after the fix, then passed in the full core suite. One source assertion was corrected because the arrival document alone contained all the facts. Reply inspection caught unsupported “plunge pool” wording, so the prompt now prohibits embellishing amenities. Nightly rates remain unavailable and must not be offered.
 
 36 backend tests, frontend checks and desktop/mobile menu inspection passed. Open-menu header now uses dark ink on cream with clear space above navigation. Browser weekend search displays exact dates and a fresh Reserve card. Claude and independent reviews approved. Generated response files remain outside Git in `/tmp`.
+
+## Concierge prompt regressions, 7 October 2026
+
+Production browser probes reproduced disclosure of a claimed model identity and an
+availability search on assumed next-week dates after an earlier exact-date search.
+Added executable regression and holdout cases, including arrival-only follow-ups
+that must retain the party size and three-night duration. The prompt now redirects
+internal model questions to hotel help and clarifies next-week arrival before lookup.
+The evaluator records attempted availability calls, even when no cards are returned.
+
+Successful checks:
+
+```bash
+uv sync --locked --directory backend
+uv run --directory backend ruff check app tests evaluate.py
+uv run --directory backend pytest -q
+git diff --check
+```
+
+42 backend tests passed. Independent review found a missing context-retention check;
+the case and guest-count assertion were corrected. Live regression runs were attempted
+but failed on expired Google application credentials, not behavior assertions.
+Refresh with `gcloud auth application-default login`, then run the documented smoke
+and holdout commands. Do not claim live eval acceptance or deploy this prompt until
+those runs and answer review pass. Claude review also awaits authorization to send
+this private diff to that external service. Production was not changed.

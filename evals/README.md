@@ -1,6 +1,26 @@
 # Guest evaluation cases
 
-These fixtures define expected behavior; no evaluation runner is implemented yet.
+`guest-questions.json` defines the broader behavior and injected-failure fixtures.
+`demo-smoke.json` contains executable live cases for `backend/evaluate.py`, which
+uses the same request-local ADK runner and hotel tools as the website.
+
+```bash
+uv run --directory backend python evaluate.py --output /tmp/hotel-evals.json
+uv run --directory backend python evaluate.py --holdout --output /tmp/hotel-holdout.json
+```
+
+Use `--case model-disclosure`, `--case next-week-three-nights` or
+`--case next-week-after-exact-search` for the production regressions. Run holdouts
+after tuning the prompt. Model calls require local application credentials and
+incur inference charges. Use an explicitly migrated and seeded local demo database;
+the runner does not change hotel content or create reservations.
+
+The regression checks reject model/provider identity and require clarification
+before availability for ambiguous next-week dates. Availability attempts are recorded
+per evaluation turn, including unsuccessful calls, so empty cards cannot hide a
+premature lookup. `contains_any` groups accept equivalent clarification wording.
+These are deterministic checks, not a complete semantic quality assessment. Review
+saved answers as well, especially for unsupported date or availability claims.
 
 - `question` and optional `prior_messages` define the guest input and context.
 - `expected_tools` names relevant tools, not a rigid call sequence. A correct answer may need other allowed tools too.
