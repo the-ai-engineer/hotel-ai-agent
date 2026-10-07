@@ -124,3 +124,21 @@ Results: eight core scenarios and two held-back scenarios passed their determini
 Observed failures and fixes: weekend phrasing caused needless clarification, corrected with a computed Friday/Sunday default and explicit assumption; booking follow-up sometimes skipped fresh availability, corrected with an explicit same-stay recheck and date/card assertions. The failing multi-turn case passed twice after the fix, then passed in the full core suite. One source assertion was corrected because the arrival document alone contained all the facts. Reply inspection caught unsupported “plunge pool” wording, so the prompt now prohibits embellishing amenities. Nightly rates remain unavailable and must not be offered.
 
 36 backend tests, frontend checks and desktop/mobile menu inspection passed. Open-menu header now uses dark ink on cream with clear space above navigation. Browser weekend search displays exact dates and a fresh Reserve card. Claude and independent reviews approved. Generated response files remain outside Git in `/tmp`.
+
+## Cloud Run container packaging
+
+Packaged the unchanged merged demo code from `349b572` for Linux amd64. Production dependencies come from `backend/uv.lock`; the container runs as UID 10001. Both Docker and upload contexts exclude local credentials. Independent and Claude reviews found no blockers.
+
+Verified commands:
+
+```bash
+docker build --platform linux/amd64 -t europe-west2-docker.pkg.dev/personal-infrastructure-505708/cloud-run-source-deploy/hotel-ai-agent:349b572 .
+gcloud auth configure-docker europe-west2-docker.pkg.dev --quiet
+docker push europe-west2-docker.pkg.dev/personal-infrastructure-505708/cloud-run-source-deploy/hotel-ai-agent:349b572
+```
+
+Pushed digest: `sha256:6e6a5efa3532a7a6832e433a63a85f83018cc0a4161a4dc168e676b30c9c7768`. A non-root container smoke check imported the application and verified website, policy and migration paths. No live Cloud Run result is claimed here.
+
+Cloud Build could not use the project's default compute identity to read its source bucket. The legacy Cloud Build identity was rejected as a user-specified account. Used a local build instead; no extra build permissions were granted.
+
+The Agents CLI deployment dry run passed with explicit Cloud Run target, project, region, prebuilt image, runtime identity, secret reference and environment settings. It defaults to private access and does not attach the Cloud SQL socket; these must be configured explicitly with gcloud for the guest website.
