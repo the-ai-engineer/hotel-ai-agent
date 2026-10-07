@@ -150,7 +150,7 @@ python3 scripts/verify_website.py
 git diff --check
 ```
 
-50 backend tests pass, including 14 recovery tests. The two-process HTTP exercise
+52 backend tests pass, including 16 recovery tests. The two-process HTTP exercise
 observes 20 running turns concurrently, isolated history and durable replay. Other
 checks cover foreign access, current-conversation scope, running duplicates,
 competing attempts, Stop, process kill, deadline expiry, rejected final writes,
@@ -180,3 +180,8 @@ A final review caught provider-close errors skipping durable interruption. Durab
 cleanup now runs first with a four-second bound, followed by separately guarded
 three-second iterator cleanup. Injecting a close failure after browser disconnect
 proves the saved state is interrupted, the guest lock is clear and the slot is free.
+
+Independent review found direct asyncio cancellation during durable cleanup could
+skip permit release on ASGI 2.4. Both direct-cancel and transport-failure/slow-cleanup
+regressions fail on 7c326b5 and pass after cancelling the watcher before cleanup
+and covering the entire cleanup with the admission-release finally.

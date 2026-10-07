@@ -604,3 +604,96 @@ async def test_remote_stop_releases_slot_while_sse_send_is_backpressured(
         if not running.done():
             running.cancel()
         await asyncio.gather(running, return_exceptions=True)
+
+
+async def test_cancelled_durable_cleanup_always_releases_permit(client, monkeypatch):
+    from app import turns
+
+    await start(client)
+
+    async def failed(*args, **kwargs):
+        raise RuntimeError("Injected producer failure")
+        yield
+
+    async def cancelled(*args, **kwargs):
+        raise asyncio.CancelledError()
+
+    client.app.state.answer = failed
+    monkeypatch.setattr(turns, "interrupt", cancelled)
+    with pytest.raises(asyncio.CancelledError):
+        await client.post(
+            "/api/chat",
+            headers=ORIGIN,
+            json={"turn_id": str(uuid.uuid4()), "message": "cleanup cancelled"},
+        )
+    assert client.app.state.model_admission.active == 0
+
+
+async def test_asgi24_send_failure_stops_watcher_before_durable_cleanup(
+    client, pool, monkeypatch
+):
+    from app import turns
+
+    await start(client)
+    turn_id = uuid.uuid4()
+    body = json.dumps({"turn_id": str(turn_id), "message": "send failure"}).encode()
+    requested = False
+    closed = asyncio.Event()
+    original = turns.interrupt
+
+    async def slow_interrupt(*args, **kwargs):
+        await original(*args, **kwargs)
+        # A monitor must not cancel the response after this durable interruption.
+        await asyncio.sleep(0.6)
+
+    monkeypatch.setattr(turns, "interrupt", slow_interrupt)
+
+    async def producer(*args, **kwargs):
+        try:
+            yield {"type": "text", "text": "Partial"}
+            await asyncio.Event().wait()
+        finally:
+            closed.set()
+
+    client.app.state.answer = producer
+
+    async def receive():
+        nonlocal requested
+        if not requested:
+            requested = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        await asyncio.Event().wait()
+
+    async def send(message):
+        if b"event: text" in message.get("body", b""):
+            raise OSError("Injected transport failure")
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": "2.4"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/api/chat",
+        "raw_path": b"/api/chat",
+        "query_string": b"",
+        "root_path": "",
+        "server": ("127.0.0.1", 8773),
+        "client": ("127.0.0.1", 10000),
+        "headers": [
+            (b"origin", ORIGIN["Origin"].encode()),
+            (b"content-type", b"application/json"),
+            (b"cookie", f"hotel_session={client.cookies['hotel_session']}".encode()),
+        ],
+    }
+    from starlette.requests import ClientDisconnect
+
+    with pytest.raises(ClientDisconnect):
+        await asyncio.wait_for(client.app(scope, receive, send), 2)
+    assert client.app.state.model_admission.active == 0
+    await asyncio.wait_for(closed.wait(), 2)
+    async with pool.acquire() as conn:
+        assert (
+            await conn.fetchval("SELECT status FROM turns WHERE id=$1", turn_id)
+            == "interrupted"
+        )

@@ -339,6 +339,7 @@ def create_app(settings=None):
         failure_status = "interrupted"
         stopped_remotely = False
         producer = None
+        watcher = None
 
         async def watch_stop(task):
             nonlocal stopped_remotely, failure_status
@@ -369,8 +370,7 @@ def create_app(settings=None):
                 task.cancel()
 
         async def stream():
-            nonlocal completed, failure_status, producer
-            watcher = None
+            nonlocal completed, failure_status, producer, watcher
             try:
                 watcher = asyncio.create_task(
                     watch_stop(asyncio.current_task()), name="hotel-turn-watch"
@@ -467,34 +467,38 @@ def create_app(settings=None):
                 try:
                     await super().__call__(scope, receive, send)
                 finally:
-                    with anyio.CancelScope(shield=True):
-                        try:
-                            # Preserve durable recovery even if provider cleanup fails.
-                            with anyio.fail_after(4):
-                                if not completed:
-                                    await turns.interrupt(
-                                        app.state.pool,
-                                        key,
-                                        question.turn_id,
-                                        failure_status,
-                                    )
-                        except Exception:
-                            log.warning(
-                                "turn_cleanup_failed turn_id=%s", question.turn_id
-                            )
-                        try:
-                            # Cancellation can land in send(), outside the generator.
-                            with anyio.fail_after(3):
-                                await self.body_iterator.aclose()
-                                if producer is not None:
-                                    await producer.aclose()
-                        except Exception:
-                            log.warning(
-                                "turn_producer_cleanup_failed turn_id=%s",
-                                question.turn_id,
-                            )
-                        finally:
-                            app.state.model_admission.release()
+                    try:
+                        # Prevent monitor-driven asyncio cancellation of cleanup itself.
+                        if watcher:
+                            watcher.cancel()
+                        with anyio.CancelScope(shield=True):
+                            try:
+                                # Preserve durable recovery even if provider cleanup fails.
+                                with anyio.fail_after(4):
+                                    if not completed:
+                                        await turns.interrupt(
+                                            app.state.pool,
+                                            key,
+                                            question.turn_id,
+                                            failure_status,
+                                        )
+                            except Exception:
+                                log.warning(
+                                    "turn_cleanup_failed turn_id=%s", question.turn_id
+                                )
+                            try:
+                                # Cancellation can land in send(), outside the generator.
+                                with anyio.fail_after(3):
+                                    await self.body_iterator.aclose()
+                                    if producer is not None:
+                                        await producer.aclose()
+                            except Exception:
+                                log.warning(
+                                    "turn_producer_cleanup_failed turn_id=%s",
+                                    question.turn_id,
+                                )
+                    finally:
+                        app.state.model_admission.release()
 
         return GuestResponse(
             stream(),
