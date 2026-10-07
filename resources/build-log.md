@@ -142,3 +142,29 @@ Pushed digest: `sha256:6e6a5efa3532a7a6832e433a63a85f83018cc0a4161a4dc168e676b30
 Cloud Build could not use the project's default compute identity to read its source bucket. The legacy Cloud Build identity was rejected as a user-specified account. Used a local build instead; no extra build permissions were granted.
 
 The Agents CLI deployment dry run passed with explicit Cloud Run target, project, region, prebuilt image, runtime identity, secret reference and environment settings. It defaults to private access and does not attach the Cloud SQL socket; these must be configured explicitly with gcloud for the guest website.
+
+## Verified Google Cloud demo deployment
+
+Deployed the merged app from `349b572` with the image digest recorded above. Google Agents CLI deployed `hotel-agent` in `europe-west2`, project `personal-infrastructure-505708`; gcloud attached `hotel-postgres` and enabled request-based CPU billing. Limits: 1 CPU, 1 GiB, concurrency 20, zero minimum/two maximum instances, 120-second request timeout. This is configuration, not a 100-user load test.
+
+The dedicated runtime identity has Vertex AI User, Cloud SQL Client and access to only `hotel-database-url`. Its generated database password was passed directly to Secret Manager and was not logged or committed. Cloud Run uses secret version 1, HTTPS origin and Secure HttpOnly guest cookies. No local data was copied.
+
+Successful database release commands:
+
+```bash
+gcloud run jobs execute hotel-db-setup --project personal-infrastructure-505708 --region europe-west2 --wait --quiet
+```
+
+The job ran `python -m app.db migrate`, then `python -m app.db seed` in separate successful executions. Change the job arguments explicitly before a future release; do not seed over changed real hotel inventory.
+
+The project organization policy rejected an `allUsers` grant. After explicit owner approval, public access was enabled on this service only:
+
+```bash
+gcloud run services update hotel-agent --project personal-infrastructure-505708 --region europe-west2 --no-invoker-iam-check --quiet
+```
+
+Public checks passed: website with the latest pause control, database health, villa APIs/detail pages, booking page, Secure cookie, live Gemini availability, sourced dining answer, confirmed fictional reservation, idempotent retry, owned booking lookup, pending hotel request, saved conversation history and cross-guest rejection. Test reservation uses 1–3 August 2027, leaving the normal recording dates untouched. Browser verified live availability cards and rendering.
+
+Live URL: https://hotel-agent-1004219842855.europe-west2.run.app/
+
+The CLI's suggested A2A/standard ADK routes do not apply to this custom FastAPI adapter. Test `/api/chat` through the hotel widget. Shared abuse budgets, broader release evaluation, load testing and retention remain separate work.

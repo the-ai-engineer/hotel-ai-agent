@@ -3,14 +3,16 @@
 The recording starting point for adding an AI concierge to Sanctuary Hotel,
 a fictional luxury forest retreat.
 
-**Status:** the existing website is connected to a local ADK policy concierge using
+**Live demo:** https://hotel-agent-1004219842855.europe-west2.run.app/
+
+**Status:** the website is connected to an ADK policy concierge using
 Gemini 3.8 Flash on Vertex AI. Policies and completed conversations live in
-PostgreSQL. Read-only villa availability returns photo cards. Guests can start a
+PostgreSQL (Cloud SQL in the deployed demo). Read-only villa availability returns photo cards. Guests can start a
 new conversation without carrying old context forward. Villa cards open dedicated
 Forest Suite and Garden Villa pages with the same saved conversation. Reserve buttons
 open a review-and-confirm booking page. The concierge can look up owned demo
 reservations and prepare notes for explicit guest confirmation. Stronger turn recovery, production limits and
-cloud deployment are later Linear slices. This branch is a local development demo.
+retention are later Linear slices. The cloud service is a public demo, not a completed production hardening release.
 
 ## Run the agent locally
 
