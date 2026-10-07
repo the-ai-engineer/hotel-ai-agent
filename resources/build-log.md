@@ -150,7 +150,7 @@ python3 scripts/verify_website.py
 git diff --check
 ```
 
-49 backend tests pass, including 13 recovery tests. The two-process HTTP exercise
+50 backend tests pass, including 14 recovery tests. The two-process HTTP exercise
 observes 20 running turns concurrently, isolated history and durable replay. Other
 checks cover foreign access, current-conversation scope, running duplicates,
 competing attempts, Stop, process kill, deadline expiry, rejected final writes,
@@ -175,3 +175,8 @@ blocked. The locked AnyIO version correctly ends the request and frees the slot,
 but the model producer was left suspended. Explicitly closing both iterators in
 shielded response cleanup fixes producer finalization; the retained test asserts
 request completion, zero held slots and execution of the producer cleanup.
+
+A final review caught provider-close errors skipping durable interruption. Durable
+cleanup now runs first with a four-second bound, followed by separately guarded
+three-second iterator cleanup. Injecting a close failure after browser disconnect
+proves the saved state is interrupted, the guest lock is clear and the slot is free.

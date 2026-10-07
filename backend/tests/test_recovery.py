@@ -531,7 +531,10 @@ async def test_expired_rate_counters_are_pruned(pool):
         )
 
 
-async def test_remote_stop_releases_slot_while_sse_send_is_backpressured(client):
+@pytest.mark.parametrize("remote_stop", [True, False])
+async def test_remote_stop_releases_slot_while_sse_send_is_backpressured(
+    client, remote_stop
+):
     await start(client)
     turn_id = uuid.uuid4()
     body = json.dumps({"turn_id": str(turn_id), "message": "backpressure"}).encode()
@@ -545,6 +548,8 @@ async def test_remote_stop_releases_slot_while_sse_send_is_backpressured(client)
             await asyncio.Event().wait()
         finally:
             model_closed.set()
+            if not remote_stop:
+                raise RuntimeError("Injected provider close failure")
 
     client.app.state.answer = producer
 
@@ -553,6 +558,9 @@ async def test_remote_stop_releases_slot_while_sse_send_is_backpressured(client)
         if not requested:
             requested = True
             return {"type": "http.request", "body": body, "more_body": False}
+        if not remote_stop:
+            await text_sent.wait()
+            return {"type": "http.disconnect"}
         await asyncio.Event().wait()
 
     async def send(message):
@@ -581,12 +589,17 @@ async def test_remote_stop_releases_slot_while_sse_send_is_backpressured(client)
     running = asyncio.create_task(client.app(scope, receive, send))
     try:
         await asyncio.wait_for(text_sent.wait(), 2)
-        assert (await client.post(f"/api/turns/{turn_id}/stop", headers=ORIGIN)).json()[
-            "status"
-        ] == "interrupted"
+        if remote_stop:
+            assert (
+                await client.post(f"/api/turns/{turn_id}/stop", headers=ORIGIN)
+            ).json()["status"] == "interrupted"
         await asyncio.wait_for(running, 2)
         assert client.app.state.model_admission.active == 0
         await asyncio.wait_for(model_closed.wait(), 2)
+        assert (await client.get(f"/api/turns/{turn_id}")).json()[
+            "status"
+        ] == "interrupted"
+        assert (await client.get("/api/history")).json()["active_turn"] is None
     finally:
         if not running.done():
             running.cancel()

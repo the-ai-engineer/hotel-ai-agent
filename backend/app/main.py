@@ -467,24 +467,34 @@ def create_app(settings=None):
                 try:
                     await super().__call__(scope, receive, send)
                 finally:
-                    try:
-                        with anyio.CancelScope(shield=True), anyio.fail_after(7):
+                    with anyio.CancelScope(shield=True):
+                        try:
+                            # Preserve durable recovery even if provider cleanup fails.
+                            with anyio.fail_after(4):
+                                if not completed:
+                                    await turns.interrupt(
+                                        app.state.pool,
+                                        key,
+                                        question.turn_id,
+                                        failure_status,
+                                    )
+                        except Exception:
+                            log.warning(
+                                "turn_cleanup_failed turn_id=%s", question.turn_id
+                            )
+                        try:
                             # Cancellation can land in send(), outside the generator.
-                            # Close both suspended iterators before releasing admission.
-                            await self.body_iterator.aclose()
-                            if producer is not None:
-                                await producer.aclose()
-                            if not completed:
-                                await turns.interrupt(
-                                    app.state.pool,
-                                    key,
-                                    question.turn_id,
-                                    failure_status,
-                                )
-                    except Exception:
-                        log.warning("turn_cleanup_failed turn_id=%s", question.turn_id)
-                    finally:
-                        app.state.model_admission.release()
+                            with anyio.fail_after(3):
+                                await self.body_iterator.aclose()
+                                if producer is not None:
+                                    await producer.aclose()
+                        except Exception:
+                            log.warning(
+                                "turn_producer_cleanup_failed turn_id=%s",
+                                question.turn_id,
+                            )
+                        finally:
+                            app.state.model_admission.release()
 
         return GuestResponse(
             stream(),
