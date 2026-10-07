@@ -102,3 +102,25 @@ uv run --directory backend pytest -q
 35 backend tests passed, including overlapping reservation concurrency, retry safety, ownership, request expiry and failure rollback. Frontend tests cover shared session initialization, booking review, failed confirmation retry and reload recovery. Claude review caught a clock fixture bypass; fixed by calling `property_today()`. Independent review caught a fresh-browser cookie race; fixed by a shared session promise. Final targeted review approved.
 
 Live Vertex/browser proof: October availability, prefilled booking page, confirmed reference, owned booking lookup and explicit late-checkout note submission. Notes remain pending hotel review and never change the reservation. No payment, staff notification or Cloud Run deployment was performed.
+
+## Demo prompt refinements and live smoke evaluation
+
+Used the Agents CLI eval skill and `agents-cli eval run --help` to inspect the supported protocol. The hotel uses a custom HTTP/SSE adapter, not the standard ADK API server routes. This slice runs the same ADK Runner directly against local PostgreSQL and remote Vertex; it does not claim `agents-cli eval run` or managed grading passed.
+
+Verified commands:
+
+```bash
+uv run --directory backend python evaluate.py --output /tmp/hotel-evals-release.json
+uv run --directory backend python evaluate.py --holdout --output /tmp/hotel-evals-final-holdout.json
+uv run --directory backend python evaluate.py --case blocked-alternative --output /tmp/hotel-evals-booking-fix-1.json
+uv run --directory backend ruff check app tests evaluate.py
+uv run --directory backend pytest -q
+npm test --prefix frontend
+python3 scripts/verify_website.py
+```
+
+Results: eight core scenarios and two held-back scenarios passed their deterministic smoke checks, covering 14 turns. Final core complete-answer times were 2.1–8.1 seconds; these are small local runs, not a load benchmark or first-token timings. Real Gemini Flash replies were reviewed alongside the checks. Source reads and selected phrases are not proof of universal grounding; no LLM judge score or token-usage metric was collected here. Managed CLI evaluation and broader release coverage remain in GRA-215.
+
+Observed failures and fixes: weekend phrasing caused needless clarification, corrected with a computed Friday/Sunday default and explicit assumption; booking follow-up sometimes skipped fresh availability, corrected with an explicit same-stay recheck and date/card assertions. The failing multi-turn case passed twice after the fix, then passed in the full core suite. One source assertion was corrected because the arrival document alone contained all the facts. Reply inspection caught unsupported “plunge pool” wording, so the prompt now prohibits embellishing amenities. Nightly rates remain unavailable and must not be offered.
+
+36 backend tests, frontend checks and desktop/mobile menu inspection passed. Open-menu header now uses dark ink on cream with clear space above navigation. Browser weekend search displays exact dates and a fresh Reserve card. Claude and independent reviews approved. Generated response files remain outside Git in `/tmp`.

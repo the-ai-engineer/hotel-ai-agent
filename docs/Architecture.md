@@ -8,6 +8,11 @@ The first policy slice connects the static website to FastAPI, an isolated ADK i
 
 ## Runtime diagram
 
+![Target Google Cloud runtime architecture](diagrams/runtime.svg)
+
+<details>
+<summary>Detailed Mermaid source</summary>
+
 ```mermaid
 flowchart TB
     Guest[Guest browser: hotel site and widget]
@@ -29,6 +34,8 @@ flowchart TB
     Scheduler[Cloud Scheduler] --> Cleanup[Daily retention Cloud Run Job]
     Cleanup --> DB
 ```
+
+</details>
 
 Agents CLI and gcloud help build, evaluate and deploy the app. They are development tools, not runtime subprocesses. The agent runs in our container; a separate hosted agent runtime is not needed for this version.
 
@@ -59,6 +66,11 @@ This is the target layout. The first slice uses focused app modules, SQL migrati
 
 ## Guest turn and durable state
 
+![Guest request and durable conversation state](diagrams/guest-request.svg)
+
+<details>
+<summary>Detailed Mermaid source</summary>
+
 ```mermaid
 sequenceDiagram
     participant W as Widget
@@ -78,6 +90,8 @@ sequenceDiagram
     A-->>W: SSE result and done
 ```
 
+</details>
+
 The widget uses POST plus `fetch()` streaming. SSE carries progressive output; JSON endpoints load history and turn status. No chat queue or WebSocket is required. A request waits asynchronously on model/network I/O while other guests progress.
 
 PostgreSQL is the sole durable conversation record. Each invocation creates isolated ADK working state from completed turns, then disposes of it. No shared mutable agent history and no second persistent ADK history store. Later requests may reach any instance without sticky sessions.
@@ -85,6 +99,8 @@ PostgreSQL is the sole durable conversation record. Each invocation creates isol
 Store guest sessions, owned conversations, immutable turn attempts, published document versions with title, summary, keywords and complete body, villas, inventory days, fictional blocking bookings and shared rate counters. A turn stores status, deadline, input, final answer, sources, cards, safe error and usage. Do not keep an open DB transaction or connection while awaiting Gemini.
 
 ## Tools and evidence
+
+![Policy evidence and deterministic availability](diagrams/evidence.svg)
 
 | Tool | Result |
 | --- | --- |
@@ -180,6 +196,8 @@ Ordered SQL migrations run under a transaction and advisory lock with a schema v
 The website has public `/villas/{id}` detail routes, served by the same Cloud Run application using one static template. `/api/villas/{id}` returns validated, read-only PostgreSQL villa facts. Unknown IDs return 404. Cards and homepage actions link to these pages. Root-relative assets and the same host-only guest cookie keep the concierge and saved conversation consistent across navigation.
 
 ### Demo booking and request boundary
+
+![Guest confirmation and booking authorization boundaries](diagrams/booking-boundary.svg)
 
 Availability cards link to a normal booking page. Only its guest confirmation POST can create a fictional reservation. The service locks the request UUID, then the villa, rechecks full-stay availability and capacity, and saves an idempotent owned reservation. The model has no booking-write tool. References are not authentication: lookups also require the current guest cookie. The current property date is passed into every agent invocation; the inventory fixture has a reviewed one-year horizon.
 

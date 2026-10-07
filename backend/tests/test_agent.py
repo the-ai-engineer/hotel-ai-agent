@@ -76,3 +76,17 @@ async def test_actual_adk_tool_dispatch_and_isolated_working_history(pool, monke
     assert models[0].saw_history
     await anext(agent.answer(pool, settings, [], "Another guest"))
     assert not models[1].saw_history
+
+
+def test_weekend_context_rolls_across_week_and_year():
+    from datetime import date
+
+    for today, friday, sunday in [
+        (date(2026, 10, 7), "2026-10-09", "2026-10-11"),
+        (date(2026, 10, 9), "2026-10-16", "2026-10-18"),
+        (date(2026, 10, 11), "2026-10-16", "2026-10-18"),
+        (date(2026, 12, 31), "2027-01-01", "2027-01-03"),
+    ]:
+        context = agent.current_date_context(today)
+        assert f"check-in {friday}, check-out {sunday}" in context
+        assert "not booking consent" in context
