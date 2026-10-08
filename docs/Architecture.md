@@ -21,20 +21,54 @@ This design keeps the first system small while supporting multiple service insta
 ## System boundary
 
 ```mermaid
-flowchart LR
-    Guest[Guest browser]
-    subgraph Service[Cloud Run application]
-        Web[Website and FastAPI]
-        Agent[Isolated ADK concierge]
-        Tools[Approved hotel tools]
-        Web -->|Bounded context| Agent
-        Agent -->|Typed calls| Tools
+---
+config:
+  layout: elk
+  theme: base
+  themeVariables:
+    fontFamily: sans-serif
+    fontSize: 16px
+    primaryTextColor: '#17324d'
+    lineColor: '#64748b'
+    edgeLabelBackground: '#ffffff'
+  flowchart:
+    nodeSpacing: 45
+    rankSpacing: 65
+---
+flowchart TB
+    Guest[Guest browser<br/>Hotel website and concierge widget]
+
+    subgraph Service[Cloud Run · hotel application]
+        Site[Static website<br/>HTML, CSS and JavaScript]
+        API[FastAPI<br/>Ownership, admission and streaming]
+        Agent[Request-local ADK concierge]
+        Tools[Hotel tools<br/>Policies, villas and owned bookings]
+        API -->|Bounded conversation context| Agent
+        Agent -->|Validated tool calls| Tools
     end
-    Guest <-->|Pages, requests, SSE| Web
-    Agent <-->|Inference| Gemini[Gemini]
-    Web <-->|Owned state and confirmed writes| DB[(PostgreSQL)]
-    Tools <-->|Evidence and inventory| DB
-    Maintenance[Scheduled retention job] -->|Delete expired records| DB
+
+    Guest -->|Load website| Site
+    Guest <-->|Questions and streamed answers| API
+    Agent <-->|Model inference| Gemini[Gemini]
+    API <-->|Guest state and confirmed writes| DB[(Cloud SQL<br/>PostgreSQL)]
+    Tools <-->|Published evidence and inventory| DB
+
+    Secrets[Secret Manager] -.->|Credentials| API
+    API -.->|Safe diagnostics| Ops[Logging, Trace<br/>and Monitoring]
+    Scheduler[Cloud Scheduler] -->|Daily trigger| Cleanup[Retention job]
+    Cleanup -->|Delete expired records| DB
+
+    classDef guest fill:#eff6ff,stroke:#60a5fa,color:#17324d
+    classDef app fill:#ecfdf5,stroke:#34d399,color:#164e3f
+    classDef data fill:#fff7ed,stroke:#fb923c,color:#7c2d12
+    classDef external fill:#f5f3ff,stroke:#a78bfa,color:#4c1d95
+    classDef ops fill:#f8fafc,stroke:#94a3b8,color:#334155
+    class Guest guest
+    class Site,API,Agent,Tools app
+    class DB data
+    class Gemini external
+    class Secrets,Ops,Scheduler,Cleanup ops
+    style Service fill:#f0fdf4,stroke:#86efac,color:#164e3f
 ```
 
 
