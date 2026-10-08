@@ -28,8 +28,8 @@ config:
   themeVariables:
     fontFamily: sans-serif
     fontSize: 16px
-    primaryTextColor: '#17324d'
-    lineColor: '#64748b'
+    primaryTextColor: '#262626'
+    lineColor: '#737373'
     edgeLabelBackground: '#ffffff'
   flowchart:
     nodeSpacing: 45
@@ -58,17 +58,9 @@ flowchart TB
     Scheduler[Cloud Scheduler] -->|Daily trigger| Cleanup[Retention job]
     Cleanup -->|Delete expired records| DB
 
-    classDef guest fill:#eff6ff,stroke:#60a5fa,color:#17324d
-    classDef app fill:#ecfdf5,stroke:#34d399,color:#164e3f
-    classDef data fill:#fff7ed,stroke:#fb923c,color:#7c2d12
-    classDef external fill:#f5f3ff,stroke:#a78bfa,color:#4c1d95
-    classDef ops fill:#f8fafc,stroke:#94a3b8,color:#334155
-    class Guest guest
-    class Site,API,Agent,Tools app
-    class DB data
-    class Gemini external
-    class Secrets,Ops,Scheduler,Cleanup ops
-    style Service fill:#f0fdf4,stroke:#86efac,color:#164e3f
+    classDef component fill:#ffffff,stroke:#a3a3a3,color:#262626
+    class Guest,Site,API,Agent,Tools,DB,Gemini,Secrets,Ops,Scheduler,Cleanup component
+    style Service fill:#f5f5f5,stroke:#a3a3a3,color:#262626
 ```
 
 
