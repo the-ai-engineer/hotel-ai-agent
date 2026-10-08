@@ -151,7 +151,7 @@ Shared PostgreSQL admission counters protect session creation, conversations, tu
 
 ## Retention and operations
 
-Delete sessions and their conversations/turns 30 days after session creation. Authentication expiry does not delete data. A daily maintenance job performs cascading deletion and removes expired rate counters; Cloud Scheduler invokes it using a narrow service identity. This job is housekeeping, not queued chat execution. Reconcile backup retention with deletion before real guest use.
+Delete sessions and their conversations/turns 30 days after session creation. Authentication expiry does not delete data. A daily maintenance job performs cascading deletion and removes expired rate counters; Cloud Scheduler invokes it using a narrow service identity. This job is housekeeping, not queued chat execution. Cloud SQL keeps 7 daily automated backups without point-in-time recovery, so deleted sessions normally leave backups within about 7 days while daily backups succeed; see [backups](Backups.md). Confirm this policy before real guest use.
 
 Log request/turn IDs, safe outcomes, tool durations, model usage and error codes. Do not log messages, raw evidence, prompts, cookies or secrets. Trace API, agent and tools. Track first-text/completion latency, failures, interruptions, admission rejection, quota errors and pool waits. Demonstrate a failed lookup and delivered alert. Include a separate DB/readiness alarm so admission failures are visible.
 
