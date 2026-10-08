@@ -38,6 +38,12 @@ If port 55439 already serves an older hotel database, preserve its data. Create
 an isolated database named `hotel_policy` there, or set another local port in
 Compose and `backend/.env`. Do not replace another application's volume.
 
+## Concierge prompt
+
+Edit [backend/prompts/concierge.md](backend/prompts/concierge.md) to update the
+concierge instructions, then restart the server. The agent loads the UTF-8 file
+relative to its own location and appends the current property date at runtime.
+
 ## Website-only recording start
 
 The `recording-start-20261006` tag preserves the disabled-widget starting point.

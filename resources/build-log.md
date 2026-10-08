@@ -124,3 +124,25 @@ Results: eight core scenarios and two held-back scenarios passed their determini
 Observed failures and fixes: weekend phrasing caused needless clarification, corrected with a computed Friday/Sunday default and explicit assumption; booking follow-up sometimes skipped fresh availability, corrected with an explicit same-stay recheck and date/card assertions. The failing multi-turn case passed twice after the fix, then passed in the full core suite. One source assertion was corrected because the arrival document alone contained all the facts. Reply inspection caught unsupported “plunge pool” wording, so the prompt now prohibits embellishing amenities. Nightly rates remain unavailable and must not be offered.
 
 36 backend tests, frontend checks and desktop/mobile menu inspection passed. Open-menu header now uses dark ink on cream with clear space above navigation. Browser weekend search displays exact dates and a fresh Reserve card. Claude and independent reviews approved. Generated response files remain outside Git in `/tmp`.
+
+
+## Concierge prompt Markdown extraction
+
+Moved the existing concierge instruction unchanged to
+`backend/prompts/concierge.md`. The agent loads UTF-8 relative to its module at
+startup; restart the server after editing. Runtime property-date context is still
+appended per invocation. The actual ADK test checks the complete file content is
+passed to the model before the date context.
+
+Verified commands:
+
+```bash
+uv run --locked --directory backend ruff check app tests evaluate.py
+uv run --locked --directory backend pytest -q
+```
+
+Ruff passes and all 36 backend tests pass using real PostgreSQL and deterministic
+model responses. Extraction was checked for exact equality with the previous
+Python literal. No live-model evaluation or cloud deployment was needed.
+Agents CLI 1.8.0 was inspected with `agents-cli info`; it does not recognize this
+custom-layout project and its installed-skills query timed out.
