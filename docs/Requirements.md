@@ -13,7 +13,8 @@ Keep the existing Sanctuary Hotel website. Connect its disabled concierge previe
 - Ask whether breakfast is included. Read the answer and open its published source.
 - Ask for a villa for two on exact dates. See matching villa cards with photos, capacity and searched dates.
 - Ask a follow-up about cancellation. The agent keeps the conversation context and retrieves policy evidence.
-- Refresh the page. Completed answers and cards remain available to the same browser session.
+- Refresh the page. Completed answers and cards remain available to the same browser session. A running turn is recovered from server status without another invocation; an interrupted attempt can be explicitly retried as a new turn.
+- Stop an answer. Show its confirmed durable state; if completion won the race, retain the saved answer. Otherwise allow another question without treating partial output as complete.
 - If information is missing or a dependency fails, get an honest explanation, retry option or explanation that staff confirmation is required.
 
 ## Acceptance criteria

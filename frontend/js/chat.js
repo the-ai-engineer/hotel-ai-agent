@@ -19,6 +19,7 @@ let opener;
 let ready = false;
 let preparing;
 let controller;
+let currentTurn;
 
 function bubble(text, role) {
   const node = document.createElement('div');
@@ -155,7 +156,9 @@ async function api(path, options = {}) {
   if (!response.ok) {
     if (response.status === 401) { ready = false; forgetGuestSession(); }
     const data = await response.json().catch(() => ({}));
-    throw new Error(typeof data.detail === 'string' ? data.detail : 'The concierge is unavailable. Please try again.');
+    const error = new Error(typeof data.detail === 'string' ? data.detail : 'The concierge is unavailable. Please try again.');
+    error.status = response.status;
+    throw error;
   }
   return response;
 }
@@ -177,6 +180,20 @@ function prepare() {
         renderHotelRequest(node, turn.hotel_request);
       }
       ready = true;
+      const attempt = data.active_turn || data.last_attempt;
+      if (attempt) {
+        const ownedController = !controller;
+        controller ||= new AbortController();
+        busy(true);
+        currentTurn = attempt.turn_id;
+        bubble(attempt.question, 'guest');
+        const node = bubble('Recovering the saved answer…', 'assistant');
+        try {
+          await recoverTurn(attempt.status_url, node, controller.signal);
+        } catch (error) { node.remove(); if (!question.value) question.value = attempt.question; throw error; } finally {
+          if (ownedController) { controller = undefined; currentTurn = undefined; busy(false); }
+        }
+      }
     })().finally(() => { preparing = undefined; });
   }
   return preparing;
@@ -215,7 +232,24 @@ chat.addEventListener('keydown', (event) => {
     else closeChat();
   }
 });
-stop.addEventListener('click', () => controller?.abort());
+stop.addEventListener('click', async () => {
+  const active = controller;
+  if (!active) return;
+  stop.disabled = true;
+  let interrupted = true;
+  try {
+    if (currentTurn) {
+      const response = await api(`/api/turns/${currentTurn}/stop`, { method: 'POST' });
+      interrupted = (await response.json()).status !== 'completed';
+    }
+  } catch (error) {
+    // Stop may beat admission. Aborting the pending POST still disconnects it.
+    if (error.status !== 404) bubble(error.message, 'notice');
+  } finally {
+    if (interrupted) active.abort();
+    stop.disabled = false;
+  }
+});
 reset.addEventListener('click', () => {
   resetConfirm.hidden = false;
   cancelReset.focus();
@@ -250,6 +284,39 @@ confirmReset.addEventListener('click', async () => {
   }
 });
 
+function busy(value) {
+  reset.disabled = value;
+  messages.setAttribute('aria-busy', String(value));
+  send.disabled = value;
+  question.disabled = value;
+  stop.hidden = !value;
+}
+
+function savedResult(node, data) {
+  renderReply(node.querySelector('.concierge-text'), data.answer);
+  renderSources(node, data.sources);
+  renderAvailability(node, data.availability);
+  renderHotelRequest(node, data.hotel_request);
+}
+
+async function recoverTurn(url, node, signal) {
+  if (!/^\/api\/turns\/[0-9a-f-]{36}$/.test(url)) throw new Error('Invalid recovery link.');
+  while (true) {
+    const response = await api(url, { signal });
+    const data = await response.json();
+    if (data.status === 'completed') { savedResult(node, data.result); return; }
+    if (data.status !== 'running') {
+      throw new Error('The answer was interrupted or could not be saved. You can ask again.');
+    }
+    await new Promise((resolve, reject) => {
+      const abort = () => { clearTimeout(timer); reject(new DOMException('Stopped', 'AbortError')); };
+      const timer = setTimeout(() => { signal.removeEventListener('abort', abort); resolve(); }, 500);
+      if (signal.aborted) abort();
+      else signal.addEventListener('abort', abort, { once: true });
+    });
+  }
+}
+
 // fetch POST streaming works with the same-origin session cookie.
 async function readEvents(response, onEvent) {
   const reader = response.body.getReader();
@@ -281,14 +348,11 @@ form.addEventListener('submit', async (event) => {
   if (!text || controller) return;
   if (!resetConfirm.hidden) return;
   controller = new AbortController();
-  reset.disabled = true;
-  messages.setAttribute('aria-busy', 'true');
-  send.disabled = true;
-  question.disabled = true;
-  stop.hidden = false;
+  busy(true);
   let node;
   let committed = false;
   let rendering;
+  let turnId;
   try {
     await prepare();
     bubble(text, 'guest');
@@ -298,13 +362,21 @@ form.addEventListener('submit', async (event) => {
       content.scrollTop = content.scrollHeight;
     });
     let draft = '';
+    turnId = crypto.randomUUID();
+    currentTurn = turnId;
     const response = await api('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ turn_id: crypto.randomUUID(), message: text }),
+      body: JSON.stringify({ turn_id: turnId, message: text }),
       signal: controller.signal,
     });
-    await readEvents(response, (name, data) => {
+    if (response.headers?.get('content-type')?.includes('application/json')) {
+      const data = await response.json();
+      if (data.status === 'completed') { rendering.cancel(); savedResult(node, data.result); }
+      else { rendering.cancel(); await recoverTurn(data.status_url, node, controller.signal); }
+      committed = true;
+    } else await readEvents(response, (name, data) => {
+      if (name === 'turn_started') currentTurn = data.turn_id;
       if (name === 'text') {
         draft += data.text;
         rendering.update(draft);
@@ -319,8 +391,19 @@ form.addEventListener('submit', async (event) => {
         throw new Error(data.message);
       }
     });
-    if (!committed) throw new Error('The connection ended before the answer was saved. Please try again.');
+    if (!committed) {
+      rendering.cancel();
+      await recoverTurn(`/api/turns/${turnId}`, node, controller.signal);
+      committed = true;
+    }
   } catch (error) {
+    if (!committed && turnId && !error.status && error.name !== 'AbortError') {
+      try {
+        rendering?.cancel();
+        await recoverTurn(`/api/turns/${turnId}`, node, controller.signal);
+        committed = true;
+      } catch (recoveryError) { error = recoveryError; }
+    }
     if (!committed) {
       if (node) node.remove();
       bubble(error.name === 'AbortError' ? 'Answer stopped. You can ask again.' : error.message, 'notice');
@@ -329,11 +412,8 @@ form.addEventListener('submit', async (event) => {
   } finally {
     rendering?.cancel();
     controller = undefined;
-    reset.disabled = false;
-    messages.setAttribute('aria-busy', 'false');
-    send.disabled = false;
-    question.disabled = false;
-    stop.hidden = true;
+    currentTurn = undefined;
+    busy(false);
     question.focus();
   }
 });

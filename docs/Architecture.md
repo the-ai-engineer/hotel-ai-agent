@@ -4,7 +4,7 @@ Canonical build direction, 6 October 2026. Read [Requirements](Requirements.md) 
 
 ## Current state
 
-The first policy slice connects the static website to FastAPI, an isolated ADK invocation and local PostgreSQL. Villa pages, availability, guest-confirmed demo reservations and owned hotel notes are implemented locally. Full turn recovery, abuse limits and deployment remain planned. Earlier unfinished implementations were not reused.
+The first policy slice connects the static website to FastAPI, an isolated ADK invocation and local PostgreSQL. Villa pages, availability, guest-confirmed demo reservations and owned hotel notes are implemented locally. Durable turn replay/recovery, shared admission budgets and a process-local model cap are implemented locally. Deployment and measured cloud/model capacity remain planned. Earlier unfinished implementations were not reused.
 
 ## Runtime diagram
 
@@ -126,10 +126,10 @@ The model explains evidence and chooses tools. It cannot write bookings, run arb
 - Use a random session token in an HttpOnly, host-only cookie. Require Secure in deployment, SameSite=Lax and a fixed 24-hour expiry. Do not store session credentials or conversation content in browser storage.
 - Check session ownership for every conversation/turn read and write. Validate allowed Origin on browser mutations. An ID alone grants no access.
 - Reserve one active turn per conversation in a short PostgreSQL transaction. A unique client turn UUID prevents duplicate invocations across instances.
-- A repeated completed UUID returns the saved result. A running attempt provides its status URL. Failed/interrupted attempts require an explicit new attempt.
+- GET `/api/turns/{id}` returns owned current-conversation status; POST `/api/turns/{id}/stop` validates Origin and records interruption. History includes the active turn or latest incomplete attempt for refresh recovery. A repeated completed UUID returns the saved result. A running attempt provides its status URL. Failed/interrupted attempts require an explicit new attempt.
 - Enforce a 90-second application deadline; initially configure the Cloud Run request timeout to 120 seconds. Platform timeout alone is not cancellation.
-- Stop or disconnect cancels local work and records interruption when possible. After a crash, status/admission expires stale turns. Guard final writes against stale deadlines and newer turns.
-- `done` means the answer and evidence committed. Failed persistence never produces a completed answer. Partial text is provisional. Reconnect fetches durable state; it does not resume token offsets or restart a completed model run.
+- Stop records interruption under the session lock and cancels model work locally or through a 250 ms cross-process status check. Monitoring failure stops model work safely rather than ignoring Stop. Stop against an already committed turn returns its completed result. Disconnect cancels local work and records interruption when possible. After a crash, status/admission expires stale turns. Guard final writes against stale deadlines and newer turns.
+- Cancellation cleanup is shielded: durable interruption gets four seconds (including three-second pool checkout), then iterator closure gets a separate three seconds. Provider-close errors cannot skip durable interruption; local admission is always released even if cleanup fails. The stored deadline supports later recovery. `done` means the answer and evidence committed. Failed persistence never produces a completed answer. Partial text is provisional. Reconnect fetches durable state; it does not resume token offsets or restart a completed model run.
 - Model/tool failure shows a safe error, retry or contact option. Retry upstream 429/503 at most once before visible output/tool execution, within the same deadline.
 
 ## Capacity and cost controls
@@ -147,7 +147,7 @@ The small rehearsal cannot prove 100-active-turn capacity. Before higher stages,
 
 Pass at most 20 completed turns and 16,000 history characters to the model. Bound input to 2,000 characters, document evidence to four distinct bodies and 24,000 characters per turn (including repeated reads), tool calls to eight and final output to 2,048 tokens. Validate and cap final result size at 64 KiB.
 
-Shared PostgreSQL admission counters protect session creation, conversations, turns and the property as a whole. Initial defaults from this architecture: 10 turns/session/minute, 30/IP/minute and 10,000/property-local day. The property-wide minute limit must come from measured model capacity with headroom. Count failed admitted attempts too. Hash IP identifiers and expire counters. Verify the deployed proxy chain before trusting forwarded IPs. Billing alerts are notifications, not a hard spending cap.
+Shared PostgreSQL admission counters protect session creation, conversations, turns and the property as a whole. Initial defaults from this architecture: 10 turns/session/minute, 30/IP/minute and 10,000/property-local day. The configurable property-wide minute limit defaults to a conservative 60-turn demo guard; replace it with measured model capacity and headroom before making a normal-load commitment. Count failed admitted attempts too. Hash peer-IP identifiers and expire counters. The current app ignores forwarded headers; verify the deployed proxy chain and attribution before public access. New session creation defaults to 10/IP/minute and conversation reset to 10/session/minute. Successful admission opportunistically prunes up to 1,000 expired counters without waiting on another cleanup transaction; scheduled retention remains GRA-217. Billing alerts are notifications, not a hard spending cap.
 
 ## Retention and operations
 
@@ -187,7 +187,7 @@ Each Linear slice ends with a guest-visible result and recorded verification. Cr
 
 ## First policy slice limits
 
-The local prototype uses an owned guest cookie with one current conversation UUID and loads only completed turns from that conversation. “New conversation” rotates the UUID atomically, clears the visible chat and model context, and preserves earlier records for retention. It is rejected while an answer is active. Closing the widget does not reset the conversation. The retention cleanup below is planned, not yet implemented. PostgreSQL prevents simultaneous submissions, and final output is saved before completion is signalled. Full repeated-turn result replay, crash recovery, shared abuse budgets and per-instance model admission belong to GRA-214. Do not expose this slice publicly. Source content is served as plain text at the exact published revision.
+The local prototype uses an owned guest cookie with one current conversation UUID and loads only completed turns from that conversation. “New conversation” rotates the UUID atomically, clears the visible chat and model context, and preserves earlier records for retention. It is rejected while an answer is active. Closing the widget does not reset the conversation. The retention cleanup below is planned, not yet implemented. PostgreSQL prevents simultaneous submissions, and final output is saved before completion is signalled. GRA-214 adds repeated-turn replay, owned status/Stop endpoints, stored deadlines, cross-process cancellation monitoring, stale-turn recovery, shared abuse budgets and per-instance model admission. See [acceptance evidence](conversation-recovery.md). Do not expose this slice publicly. Source content is served as plain text at the exact published revision.
 
 Ordered SQL migrations run under a transaction and advisory lock with a schema version ledger. This keeps the initial schema change path small; migrations and seeds are explicit commands, never startup side effects.
 
