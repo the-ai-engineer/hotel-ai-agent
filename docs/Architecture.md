@@ -60,7 +60,7 @@ flowchart TB
 
     classDef component fill:#ffffff,stroke:#a3a3a3,color:#262626
     class Guest,Site,API,Agent,Tools,DB,Gemini,Secrets,Ops,Scheduler,Cleanup component
-    style Service fill:#f5f5f5,stroke:#a3a3a3,color:#262626
+    style Service fill:transparent,stroke:#a3a3a3,color:#262626
 ```
 
 
