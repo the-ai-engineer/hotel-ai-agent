@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from google.adk.models.base_llm import BaseLlm
 from google.adk.models.llm_response import LlmResponse
 from google.genai import types
@@ -13,6 +15,8 @@ class ScriptedModel(BaseLlm):
     saw_history: bool = False
 
     async def generate_content_async(self, llm_request, stream=False):
+        prompt = (Path(__file__).resolve().parents[1] / "prompts" / "concierge.md").read_text(encoding="utf-8")
+        assert str(llm_request.config.system_instruction).startswith(prompt + "\n")
         assert (
             "Current property date: 2026-10-06 (Tuesday), timezone Asia/Makassar"
             in str(llm_request.config.system_instruction)
