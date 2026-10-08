@@ -146,3 +146,11 @@ model responses. Extraction was checked for exact equality with the previous
 Python literal. No live-model evaluation or cloud deployment was needed.
 Agents CLI 1.8.0 was inspected with `agents-cli info`; it does not recognize this
 custom-layout project and its installed-skills query timed out.
+
+## 8 October 2026: missing-price prompt grounding
+
+- Added generic prompt rules: do not infer free/included services from absent prices; preserve policy conditions; distinguish unknown charges from service availability; remove unsupported claims. No hotel facts embedded as test examples.
+- Captured the fixed eight-case Google showcase before and after against the same local app/model/database in fresh synthetic sessions. Generated artifacts: /tmp/hotel-prompt-comparison, outside Git. Saved input/reference cases plus three price holdouts in evals/google-showcase.json.
+- `uv run --directory backend python /tmp/hotel-prompt-comparison/before.py` and `after.py`: manual acceptance 7/8 to 8/8. `holdout.py`: 3/3; browser luggage check also passed.
+- `agents-cli eval grade --traces /tmp/hotel-prompt-comparison/{before,after}/traces.json --output /tmp/hotel-prompt-comparison/{before,after}/grade --config /tmp/hotel-prompt-comparison/metrics.json --project personal-infrastructure-505708 --region global --qps 2` (one command per side): Google reference match 7/8 to 8/8, grounding 6/8 to 5/8, luggage 0 to 1 on both metrics. Retained grounding limitations for advice, UI evidence and privacy context; no claim of aggregate grounding improvement.
+- `agents-cli eval compare` compared the two saved JSON reports. Ruff, 36 backend tests and `git diff --check` passed. Claude and independent review approved final generic prompt. Local app restarted; production not deployed.
