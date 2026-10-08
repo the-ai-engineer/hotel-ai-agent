@@ -1,0 +1,27 @@
+# Alert when a Cloud SQL automated backup of hotel-postgres fails.
+# Cloud SQL writes a system-event audit log entry for every backup window.
+# Single failed attempts are retried, so only the window outcome alerts.
+displayName: hotel-postgres backup failed
+combiner: OR
+notificationChannels:
+  - projects/personal-infrastructure-505708/notificationChannels/9580643640912136536
+conditions:
+  - displayName: Automated backup window failed
+    conditionMatchedLog:
+      filter: >-
+        logName="projects/personal-infrastructure-505708/logs/cloudaudit.googleapis.com%2Fsystem_event"
+        AND resource.type="cloudsql_database"
+        AND resource.labels.database_id="personal-infrastructure-505708:hotel-postgres"
+        AND protoPayload.methodName="cloudsql.instances.automatedBackup"
+        AND protoPayload.metadata.windowStatus!="STATUS_SUCCEEDED"
+        AND protoPayload.metadata.windowStatus!="STATUS_ATTEMPT_FAILED"
+alertStrategy:
+  notificationRateLimit:
+    period: 3600s
+  autoClose: 86400s
+documentation:
+  mimeType: text/markdown
+  content: >-
+    The daily hotel-postgres backup failed. Follow docs/Backups.md: check
+    `gcloud sql operations list --instance hotel-postgres` for a conflicting
+    operation, then take an on-demand backup.

@@ -124,3 +124,20 @@ Results: eight core scenarios and two held-back scenarios passed their determini
 Observed failures and fixes: weekend phrasing caused needless clarification, corrected with a computed Friday/Sunday default and explicit assumption; booking follow-up sometimes skipped fresh availability, corrected with an explicit same-stay recheck and date/card assertions. The failing multi-turn case passed twice after the fix, then passed in the full core suite. One source assertion was corrected because the arrival document alone contained all the facts. Reply inspection caught unsupported “plunge pool” wording, so the prompt now prohibits embellishing amenities. Nightly rates remain unavailable and must not be offered.
 
 36 backend tests, frontend checks and desktop/mobile menu inspection passed. Open-menu header now uses dark ink on cream with clear space above navigation. Browser weekend search displays exact dates and a fresh Reserve card. Claude and independent reviews approved. Generated response files remain outside Git in `/tmp`.
+
+## Daily database backups (GRA-221)
+
+The Cloud SQL audit log shows an instance update by the project owner at 12:45 UTC on 2026-10-08 that enabled automated backups: daily from 19:00 UTC, 7 retained, point-in-time recovery off. That command was run outside this session and is not recorded here. Added a failure alert, a restore runbook in `docs/Backups.md` and the retention link in the architecture.
+
+Verified commands:
+
+```bash
+P=personal-infrastructure-505708
+gcloud sql instances describe hotel-postgres --project $P --format="yaml(settings.backupConfiguration)"
+gcloud beta monitoring channels create --project $P --display-name=hotel-alerts --type=email --channel-labels=email_address=owain@gradientwork.com
+gcloud alpha monitoring policies create --project $P --policy-from-file=infra/hotel-postgres-backup-alert.yaml --notification-channels=projects/$P/notificationChannels/9580643640912136536
+gcloud alpha monitoring policies update projects/$P/alertPolicies/643570685260834662 --policy-from-file=infra/hotel-postgres-backup-alert.yaml
+gcloud alpha monitoring policies list --project $P
+```
+
+The alert fires on any backup window outcome other than success or a retried attempt. Its filter fields match real `cloudsql.instances.automatedBackup` system-event entries from another instance in the project and this instance's `database_id` label. A failure status has not been observed. No backup has run yet, so the first backup and the restore test are pending after 19:00 UTC.
